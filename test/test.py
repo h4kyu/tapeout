@@ -5,6 +5,8 @@ import cocotb
 from cocotb.clock import Clock
 from cocotb.triggers import ClockCycles
 
+from test_debounce import test_debounce
+
 
 @cocotb.test()
 async def test_project(dut):

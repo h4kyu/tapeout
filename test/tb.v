@@ -22,6 +22,20 @@ module tb ();
   wire [7:0] uo_out;
   wire [7:0] uio_out;
   wire [7:0] uio_oe;
+
+  // Standalone debounce unit, independent of the project's button wiring.
+  reg debounce_clk;
+  reg debounce_rst_n;
+  reg debounce_button_in;
+  wire debounce_button_out;
+
+  debounce #(.DEBOUNCE_CYCLES(5)) debounce_unit (
+      .clk       (debounce_clk),
+      .rst_n     (debounce_rst_n),
+      .button_in (debounce_button_in),
+      .button_out(debounce_button_out)
+  );
+
 `ifdef GL_TEST
   wire VPWR = 1'b1;
   wire VGND = 1'b0;
