@@ -20,6 +20,17 @@ module tt_um_h4kyu_video_poker (
   assign uio_out = 0;
   assign uio_oe  = 0;
 
+  // Debounced deal/draw button
+
+  wire deal_draw;
+
+  debounce deal_draw_debounce (
+    .button_in (ui_in[5]),
+    .button_out(deal_draw),
+    .clk       (clk),
+    .rst_n     (rst_n)
+  );
+
   // TODO: assign uo_out to output of VGA renderer
   assign uo_out = 0;
 
