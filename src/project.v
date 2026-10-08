@@ -32,7 +32,11 @@ module tt_um_h4kyu_video_poker (
   );
 
   // TODO: assign uo_out to output of VGA renderer
-  assign uo_out = 0;
+  // Temporary: expose the debounced button until VGA is implemented
+  assign uo_out = {7'b0, deal_draw};
+  // TODO: remove as inputs are implemented
+  // Temporary drive unimplemented inputs to 0 before they are connected to game logic
+  wire _temp_drive_zero = &{clk, rst_n, ui_in[4:0], uio_in[7:0], 1'b0};
 
   // List all unused inputs to prevent warnings
   wire _unused = &{ena, ui_in[7:6], 1'b0};
