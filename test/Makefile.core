@@ -1,0 +1,9 @@
+SIM ?= icarus
+TOPLEVEL_LANG = verilog
+CORE_DIR := $(dir $(abspath $(lastword $(MAKEFILE_LIST))))
+VERILOG_SOURCES = $(CORE_DIR)/../src/poker_dealer.v $(CORE_DIR)/../src/poker_evaluator.v $(CORE_DIR)/../src/poker_core.v $(CORE_DIR)/tb_core.v
+TOPLEVEL = tb_core
+COCOTB_TEST_MODULES = test_core
+SIM_BUILD = sim_build/core
+COCOTB_RESULTS_FILE = results_core.xml
+include $(shell cocotb-config --makefiles)/Makefile.sim

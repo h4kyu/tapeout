@@ -32,6 +32,23 @@ make -B FST=
 
 This will generate `tb.vcd` instead of `tb.fst`.
 
+## Poker core tests
+
+The standalone game-logic suite uses the same pinned dependencies in
+`requirements.txt` and Icarus Verilog. From `test/`, run:
+
+```sh
+make -f Makefile.core
+```
+
+It tests the controller, dealer, and evaluator with deterministic card candidates,
+without requiring a PRNG or VGA implementation. Tests include a basic complete
+round, hold switches changing independently of Deal/Draw, hand categories and
+payouts, invalid and duplicate cards, all hold masks, balance limits, and reset.
+The suite also compares 3,000 random hands with a Python reference evaluator.
+Results are written to `results_core.xml`; CI runs both this suite and the
+existing wrapper/debounce suite.
+
 ## How to view the waveform file
 
 Using GTKWave
