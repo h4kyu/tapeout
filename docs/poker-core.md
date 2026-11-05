@@ -26,7 +26,7 @@ All transfers occur on the rising edge of the system clock. Reset is active-low 
 | --- | --- | --- |
 | `deal_draw_pulse` | Input | One-clock event from the debounced deal/draw button |
 | `hold_mask[4:0]` | Input | Synchronized hold switches, captured when drawing starts |
-| `candidate[5:0]` | Input | Candidate card from Luke's PRNG adapter |
+| `candidate[5:0]` | Input | Candidate card from PRNG adapter |
 | `candidate_valid` | Input | Candidate is available on this edge |
 | `candidate_ready` | Output | Dealer can consume a candidate on this edge |
 | `cards[29:0]` | Output | Five packed hand registers |
