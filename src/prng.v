@@ -8,6 +8,10 @@ module prng (
     input  wire rst_n
 );
 
+    // TODO: After full integration and an area check, consider widening the LFSR
+    // while keeping the 8-bit seed interface. Add a whole-hand diversity test
+    // with the dealer: the current 255-state period repeats every 10.2 us at
+    // 25 MHz and yields only 196 distinct initial hands across all start phases.
     reg [7:0] lfsr;
     wire feedback = lfsr[7] ^ lfsr[5] ^ lfsr[4] ^ lfsr[3];
 
