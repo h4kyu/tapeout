@@ -36,6 +36,21 @@ module tb ();
       .button_out(debounce_button_out)
   );
 
+  // Standalone PRNG unit
+  reg prng_clk;
+  reg prng_rst_n;
+  reg [7:0] prng_seed;
+  wire [5:0] prng_rand_num;
+  wire prng_ready;
+
+  prng prng_unit (
+    .seed      (prng_seed),
+    .rand_num  (prng_rand_num),
+    .prng_ready(prng_ready),
+    .clk       (prng_clk),
+    .rst_n     (prng_rst_n)
+  );
+
 `ifdef GL_TEST
   wire VPWR = 1'b1;
   wire VGND = 1'b0;

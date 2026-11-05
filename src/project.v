@@ -31,12 +31,26 @@ module tt_um_h4kyu_video_poker (
     .rst_n     (rst_n)
   );
 
+  // Pseudorandom number generator
+
+  wire [5:0] candidate;
+  wire prng_ready;
+
+  prng rand_num_generator (
+    .seed      (uio_in),
+    .rand_num  (candidate),
+    .prng_ready(prng_ready),
+    .clk       (clk),
+    .rst_n     (rst_n)
+  );
+
   // TODO: assign uo_out to output of VGA renderer
-  // Temporary: expose the debounced button until VGA is implemented
-  assign uo_out = {7'b0, deal_draw};
+  // Temp: use prng_ready, candidate, deal_draw arbitrarily until they are used properly
+  // to prevent them from being optimized away
+  assign uo_out = {prng_ready, candidate, deal_draw};
   // TODO: remove as inputs are implemented
-  // Temporary drive unimplemented inputs to 0 before they are connected to game logic
-  wire _temp_drive_zero = &{clk, rst_n, ui_in[4:0], uio_in[7:0], 1'b0};
+  // Temp: drive unimplemented inputs to 0 before they are connected to game logic
+  wire _temp_drive_zero = &{clk, rst_n, ui_in[4:0], 1'b0};
 
   // List all unused inputs to prevent warnings
   wire _unused = &{ena, ui_in[7:6], 1'b0};

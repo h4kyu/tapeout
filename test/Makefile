@@ -6,7 +6,7 @@ SIM ?= icarus
 FST ?= -fst # Use more efficient FST format
 TOPLEVEL_LANG ?= verilog
 SRC_DIR = $(PWD)/../src
-PROJECT_SOURCES = project.v debounce.v
+PROJECT_SOURCES = project.v debounce.v prng.v
 
 ifneq ($(GATES),yes)
 
@@ -29,8 +29,8 @@ VERILOG_SOURCES += $(PDK_ROOT)/gf180mcuD/libs.ref/gf180mcu_fd_sc_mcu7t5v0/verilo
 # this gets copied in by the GDS action workflow
 VERILOG_SOURCES += $(PWD)/gate_level_netlist.v
 
-# The standalone debounce unit test still uses its RTL implementation.
-VERILOG_SOURCES += $(SRC_DIR)/debounce.v
+# The standalone unit tests still use their RTL implementations.
+VERILOG_SOURCES += $(SRC_DIR)/debounce.v $(SRC_DIR)/prng.v
 
 endif
 
