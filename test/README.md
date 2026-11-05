@@ -34,20 +34,23 @@ This will generate `tb.vcd` instead of `tb.fst`.
 
 ## Poker core tests
 
-The standalone game-logic suite uses the same pinned dependencies in
-`requirements.txt` and Icarus Verilog. From `test/`, run:
+The game-logic tests run alongside the wrapper and debounce tests using the
+pinned dependencies in `requirements.txt` and Icarus Verilog. From `test/`, run:
 
 ```sh
-make -f Makefile.core
+make
 ```
 
-It tests the controller, dealer, and evaluator with deterministic card candidates,
+Standalone core and evaluator instances in `tb.v` are tested through the
+decorated tests imported from `test_core.py` into `test.py`.
+They test the controller, dealer, and evaluator with deterministic card candidates,
 without requiring a PRNG or VGA implementation. Tests include a basic complete
 round, hold switches changing independently of Deal/Draw, hand categories and
 payouts, invalid and duplicate cards, all hold masks, balance limits, and reset.
 The suite also compares 3,000 random hands with a Python reference evaluator.
-Results are written to `results_core.xml`; CI runs both this suite and the
-existing wrapper/debounce suite.
+Results for the combined suite are written to `results.xml` by the existing CI
+test step. In gate-level simulation, these standalone units use RTL, just like
+the standalone debounce unit.
 
 ## How to view the waveform file
 

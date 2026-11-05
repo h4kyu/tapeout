@@ -27,8 +27,8 @@ All transfers occur on the rising edge of the system clock. Reset is active-low 
 | `deal_draw_pulse` | Input | One-clock event from the debounced deal/draw button |
 | `hold_mask[4:0]` | Input | Synchronized hold switches, captured when drawing starts |
 | `candidate[5:0]` | Input | Candidate card from PRNG adapter |
-| `candidate_valid` | Input | Candidate is available on this edge |
-| `candidate_ready` | Output | Dealer can consume a candidate on this edge |
+| `prng_ready` | Input | PRNG candidate is available on this edge |
+| `dealer_ready` | Output | Dealer can consume a candidate on this edge |
 | `cards[29:0]` | Output | Five packed hand registers |
 | `dealt_mask[51:0]` | Output | All cards accepted in this round, including discards |
 | `held_cards[4:0]` | Output | Hold indicators: track switches in HOLD, frozen during draw/result |
@@ -38,8 +38,8 @@ All transfers occur on the rising edge of the system clock. Reset is active-low 
 | `result_payout[11:0]` | Output | Final award, valid in RESULT |
 | `can_deal` | Output | Idle/result state with at least five credits |
 
-Transfer is `candidate_valid && candidate_ready`. The producer must advance after every transfer. 
-An adapter can assert valid continuously and advance the LFSR on ready. A free-running LFSR can also provide a candidate each cycle. 
+Transfer is `prng_ready && dealer_ready`. The producer must advance after every transfer.
+An adapter can assert `prng_ready` continuously and advance the LFSR on `dealer_ready`. A free-running LFSR can also provide a candidate each cycle.
 
 `deal_draw_pulse` starts a deal or draw. Hold/unhold uses the independent `hold_mask` levels and cannot start either operation. 
 Pulses while busy are ignored, not queued. The final input adapter must produce one pulse per debounced press and require a debounced release before rearming, we avoid connecting `button_out` directly to `deal_draw_pulse`.
@@ -79,6 +79,6 @@ Ace is high except in A-2-3-4-5. Category precedence selects the strongest appli
 
 ## Integration and validation
 
-Run `make -f Makefile.core` in `test/` with the pinned Python dependencies and Icarus Verilog installed. GitHub's RTL test workflow runs this target in addition to the existing wrapper and debounce tests. The core suite includes a basic deal/draw round, hold-switch independence, every hand category, 3,000 random hands, all 32 hold masks, invalid/duplicate rejection, accounting and reset.
+Run `make` in `test/` with the pinned Python dependencies and Icarus Verilog installed. The shared testbench contains standalone core and evaluator instances, and `test.py` imports the core tests alongside the wrapper and debounce tests. GitHub's existing RTL test workflow runs the combined suite and reports results in `results.xml`. The core suite includes a basic deal/draw round, hold-switch independence, every hand category, 3,000 random hands, all 32 hold masks, invalid/duplicate rejection, accounting and reset.
 
 The combinational evaluator and variable-index dealer still need synthesis and timing measurement at 25 MHz, and a tile-fit check. Passing behavioral simulation alone does not establish timing closure or fit in the currently configured tile.

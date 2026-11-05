@@ -7,8 +7,8 @@ module poker_core (
     input wire deal_draw_pulse, 
     input wire [4:0] hold_mask, 
     input wire [5:0] candidate,
-    input wire candidate_valid,
-    output wire candidate_ready,
+    input wire prng_ready,
+    output wire dealer_ready,
     output wire [29:0] cards,
     output wire [51:0] dealt_mask,
     output reg [4:0] held_cards,
@@ -27,7 +27,6 @@ module poker_core (
                RESULT = 3'd5;
 
     wire dealer_done;
-    wire dealer_busy;
     wire [3:0] category;
     wire [11:0] payout;
     wire [16:0] credited_balance = {1'b0, balance} + {5'b0, payout};
@@ -38,8 +37,8 @@ module poker_core (
     poker_dealer dealer (
         .clk(clk), .rst_n(rst_n), .start(start_deal || start_draw),
         .draw_mode(start_draw), .hold_mask(hold_mask),
-        .candidate(candidate), .candidate_valid(candidate_valid),
-        .candidate_ready(candidate_ready), .busy(dealer_busy),
+        .candidate(candidate), .prng_ready(prng_ready),
+        .dealer_ready(dealer_ready),
         .done(dealer_done), .cards(cards), .dealt_mask(dealt_mask)
     );
     
@@ -77,5 +76,4 @@ module poker_core (
             endcase
         end
     end
-    wire _unused = &{dealer_busy, 1'b0};
 endmodule

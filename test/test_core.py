@@ -64,7 +64,7 @@ async def tick(dut, count=1):
 async def reset(dut):
     dut.deal_draw_pulse.value = 0
     dut.hold_mask.value = 0
-    dut.candidate_valid.value = 0
+    dut.prng_ready.value = 0
     dut.rst_n.value = 0
     await Timer(1, unit="ns")
     assert int(dut.balance.value) == 100
@@ -91,17 +91,17 @@ async def wait_state(dut, state):
 
 
 async def offer(dut, card):
-    dut.candidate_valid.value = 0
+    dut.prng_ready.value = 0
     for _ in range(8):
-        if int(dut.candidate_ready.value):
+        if int(dut.dealer_ready.value):
             break
         await tick(dut)
     else:
         assert False, "Dealer did not request a candidate"
     dut.candidate.value = card
-    dut.candidate_valid.value = 1
+    dut.prng_ready.value = 1
     await tick(dut)
-    dut.candidate_valid.value = 0
+    dut.prng_ready.value = 0
 
 
 async def deal(dut, cards, holds=0):
@@ -115,6 +115,7 @@ async def deal(dut, cards, holds=0):
 @cocotb.test()
 async def basic_deal_draw_round(dut):
     """Reset, deal five cards, replace two, and credit two pair exactly once."""
+    dut = dut.core_unit
     await reset(dut)
     assert int(dut.can_deal.value) == 1
     initial = [2, 0x15, 0x29, 0x3B, 13]
@@ -138,6 +139,7 @@ async def basic_deal_draw_round(dut):
 @cocotb.test()
 async def hold_switches_do_not_trigger_deal_or_draw(dut):
     """Changing hold levels only selects cards; Deal/Draw requires its pulse."""
+    dut = dut.core_unit
     await reset(dut)
     for holds in [1, 0b10101, 31, 0]:
         dut.hold_mask.value = holds
@@ -145,7 +147,7 @@ async def hold_switches_do_not_trigger_deal_or_draw(dut):
         assert int(dut.state.value) == 0
         assert int(dut.balance.value) == 100
         assert int(dut.cards.value) == 0
-        assert int(dut.candidate_ready.value) == 0
+        assert int(dut.dealer_ready.value) == 0
 
     # Hold switches must not prevent any of the five initial cards being dealt.
     initial = [2, 0x15, 0x29, 0x3B, 13]
@@ -157,7 +159,7 @@ async def hold_switches_do_not_trigger_deal_or_draw(dut):
         assert int(dut.held_cards.value) == holds
         assert hand(dut) == initial
         assert int(dut.balance.value) == 95
-        assert int(dut.candidate_ready.value) == 0
+        assert int(dut.dealer_ready.value) == 0
 
     # A separate Deal/Draw pulse starts the draw. With all cards held, no
     # candidate is required, and subsequent switch changes cannot alter it.
@@ -176,6 +178,7 @@ async def hold_switches_do_not_trigger_deal_or_draw(dut):
 
 @cocotb.test()
 async def evaluator_categories_and_reference(dut):
+    dut = dut.evaluator_unit
     # Every category, low pair, both ace straights, invalid wrap and duplicates.
     cases = [
         ([2, 0x15, 0x29, 0x3B, 13], 0),
@@ -198,22 +201,23 @@ async def evaluator_categories_and_reference(dut):
     ]
     for cards, category in cases:
         for ordered in permutations(cards):
-            dut.eval_cards.value = pack(ordered)
+            dut.cards.value = pack(ordered)
             await Timer(1, unit="ns")
-            assert int(dut.eval_category.value) == category, ordered
-            assert int(dut.eval_payout.value) == PAYOUTS[category], ordered
+            assert int(dut.category.value) == category, ordered
+            assert int(dut.payout.value) == PAYOUTS[category], ordered
     rng = random.Random(298)
     for _ in range(3000):
         cards = rng.sample(DECK, 5)
         category = reference(cards)
-        dut.eval_cards.value = pack(cards)
+        dut.cards.value = pack(cards)
         await Timer(1, unit="ns")
-        assert int(dut.eval_category.value) == category, cards
-        assert int(dut.eval_payout.value) == PAYOUTS[category], cards
+        assert int(dut.category.value) == category, cards
+        assert int(dut.payout.value) == PAYOUTS[category], cards
 
 
 @cocotb.test()
 async def rejection_holds_and_accounting(dut):
+    dut = dut.core_unit
     await reset(dut)
     await press_deal_draw(dut)
     assert int(dut.balance.value) == 95
@@ -257,6 +261,7 @@ async def rejection_holds_and_accounting(dut):
 
 @cocotb.test()
 async def all_hold_masks_and_random_rounds(dut):
+    dut = dut.core_unit
     rng = random.Random(52)
     await reset(dut)
     expected_balance = 100
@@ -287,6 +292,7 @@ async def all_hold_masks_and_random_rounds(dut):
 
 @cocotb.test()
 async def bankruptcy_overflow_and_reset(dut):
+    dut = dut.core_unit
     await reset(dut)
     losing = [2, 0x15, 0x29, 0x3B, 13]
     for round_number in range(20):
