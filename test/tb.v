@@ -51,6 +51,42 @@ module tb ();
     .rst_n     (prng_rst_n)
   );
 
+  // Standalone game logic, independent of the project's input/output wiring.
+  reg core_clk = 0;
+  reg core_rst_n = 1;
+  reg core_deal_draw_pulse = 0;
+  reg [4:0] core_hold_mask = 0;
+  reg [5:0] core_candidate = 0;
+  reg core_prng_ready = 0;
+  wire core_dealer_ready;
+  wire [29:0] core_cards;
+  wire [51:0] core_dealt_mask;
+  wire [4:0] core_held_cards;
+  wire [2:0] core_state;
+  wire [15:0] core_balance;
+  wire [3:0] core_result_category;
+  wire [11:0] core_result_payout;
+  wire core_can_deal;
+
+  poker_core core_unit (
+      .clk(core_clk), .rst_n(core_rst_n),
+      .deal_draw_pulse(core_deal_draw_pulse), .hold_mask(core_hold_mask),
+      .candidate(core_candidate), .prng_ready(core_prng_ready),
+      .dealer_ready(core_dealer_ready), .cards(core_cards),
+      .dealt_mask(core_dealt_mask), .held_cards(core_held_cards),
+      .state(core_state), .balance(core_balance),
+      .result_category(core_result_category), .result_payout(core_result_payout),
+      .can_deal(core_can_deal)
+  );
+
+  reg [29:0] eval_cards = 0;
+  wire [3:0] eval_category;
+  wire [11:0] eval_payout;
+
+  poker_evaluator evaluator_unit (
+      .cards(eval_cards), .category(eval_category), .payout(eval_payout)
+  );
+
 `ifdef GL_TEST
   wire VPWR = 1'b1;
   wire VGND = 1'b0;
