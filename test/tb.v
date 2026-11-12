@@ -36,6 +36,20 @@ module tb ();
       .button_out(debounce_button_out)
   );
 
+  // Standalone player input adapter.
+  reg inputs_clk = 0;
+  reg inputs_rst_n = 1;
+  reg inputs_button = 0;
+  reg [4:0] inputs_holds = 0;
+  wire inputs_pulse;
+  wire [4:0] inputs_hold_mask;
+
+  poker_inputs #(.DEBOUNCE_CYCLES(5)) inputs_unit (
+      .clk(inputs_clk), .rst_n(inputs_rst_n),
+      .deal_draw_in(inputs_button), .hold_in(inputs_holds),
+      .deal_draw_pulse(inputs_pulse), .hold_mask(inputs_hold_mask)
+  );
+
   // Standalone PRNG unit
   reg prng_clk;
   reg prng_rst_n;

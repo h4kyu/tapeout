@@ -58,6 +58,14 @@ Results for the combined suite are written to `results.xml` by the existing CI
 test step. In gate-level simulation, these standalone units use RTL, just like
 the standalone debounce unit.
 
+## Player input adapter tests
+
+`test_inputs.py` checks the standalone `poker_inputs` adapter with a five-cycle
+debounce interval. It verifies two-stage hold synchronization, short press and
+release rejection, exactly one pulse per sustained press, rearming after a stable
+release, and asynchronous reset. The production default remains 500,000 cycles.
+The adapter is not connected to the project wrapper yet.
+
 ## How to view the waveform file
 
 Using GTKWave
