@@ -48,6 +48,12 @@ COCOTB_TEST_MODULES = test
 # include cocotb's make rules to take care of the simulator setup
 include $(shell cocotb-config --makefiles)/Makefile.sim
 
-.PHONY: demo
+.PHONY: demo play play-lines
 demo:
 	$(MAKE) sim COCOTB_TEST_MODULES=poker_demo COCOTB_TEST_FILTER= COCOTB_TESTCASE=
+
+play:
+	$(MAKE) sim COCOTB_TEST_MODULES=poker_terminal COCOTB_TEST_FILTER= COCOTB_TESTCASE=
+
+play-lines:
+	POKER_LINE_MODE=1 $(MAKE) play

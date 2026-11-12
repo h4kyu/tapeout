@@ -58,12 +58,15 @@ class PokerSim:
         self.game = dut.user_project
         self.holds = 0
         self.cycles = 0
+        self.accepted_presses = 0
         self.debounce_cycles = int(self.game.DEBOUNCE_CYCLES.value)
 
     async def advance(self, cycles=1):
         for _ in range(cycles):
             self.dut.clk.value = 0
             await Timer(20, unit="ns")
+            if int(self.game.deal_draw_pulse.value):
+                self.accepted_presses += 1
             self.dut.clk.value = 1
             await Timer(20, unit="ns")
             self.cycles += 1
@@ -73,6 +76,7 @@ class PokerSim:
             raise ValueError("Seed must be between 0 and 255")
         self.holds = 0
         self.cycles = 0
+        self.accepted_presses = 0
         self.dut.clk.value = 0
         self.dut.ena.value = 1
         self.dut.ui_in.value = 0
@@ -92,12 +96,26 @@ class PokerSim:
         await self.advance(3)
         return self.snapshot()
 
-    async def press_deal_draw(self):
+    async def press_deal_draw(self, profile="clean"):
+        if profile not in ("clean", "bounce", "short", "long"):
+            raise ValueError("Unknown button profile")
         interval = self.debounce_cycles + 4
-        self.dut.ui_in.value = self.holds | 32
-        await self.advance(interval)
-        self.dut.ui_in.value = self.holds
-        await self.advance(interval)
+
+        async def level(pressed, cycles):
+            self.dut.ui_in.value = self.holds | (32 if pressed else 0)
+            await self.advance(cycles)
+
+        if profile == "bounce":
+            for _ in range(3):
+                await level(True, 1)
+                await level(False, 1)
+        await level(True, max(1, self.debounce_cycles // 2) if profile == "short"
+                    else interval + (512 if profile == "long" else 0))
+        if profile == "bounce":
+            for _ in range(3):
+                await level(False, 1)
+                await level(True, 1)
+        await level(False, interval)
 
     async def wait_for_state(self, state, timeout_cycles=1024):
         for _ in range(timeout_cycles):

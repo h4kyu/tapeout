@@ -9,6 +9,7 @@ from test_debounce import test_debounce
 from test_prng import test_prng
 from test_inputs import test_player_inputs
 from poker_demo import scripted_ascii_demo
+from test_terminal import terminal_commands, game_screen_and_button_profiles
 from test_core import (
     basic_deal_draw_round,
     hold_switches_do_not_trigger_deal_or_draw,

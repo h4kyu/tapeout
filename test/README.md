@@ -108,8 +108,49 @@ The testbench uses a five-cycle debounce interval for speed; production RTL
 keeps its 20 ms default. The driver reads the configured interval rather than
 bypassing debounce. Time advances at 25 MHz during driver operations and pauses
 between them. This is a scripted RTL simulation, with no VGA or interactive
-terminal commands yet, and requires internal signals unavailable in a flattened
-gate-level netlist. Interactive controls are the next step.
+terminal commands, and requires internal signals unavailable in a flattened
+gate-level netlist. For interactive controls, use the terminal below.
+
+## Interactive terminal
+
+From `test/` with the test environment activated:
+
+```sh
+make play
+```
+
+The terminal now opens a persistent game screen (use a terminal at least 72
+columns wide). Balance, wager, cards, held indicators, result, and payout stay
+visible. No Enter key is required:
+
+- **Space** presses the Deal/Draw button.
+- **1–5** toggle the corresponding hold switches.
+- **B** cycles button profiles: clean, bounce, short, long.
+- **R** resets to 100 credits with seed 42.
+- **Q** quits; Ctrl-C also restores the terminal before exiting.
+
+The button profiles drive waveforms on the real `ui_in[5]` input, through the
+synchronizer, debounce module, and pulse detector. Clean uses a stable press;
+bounce adds one-cycle chatter on both press and release; short lasts less than
+the debounce threshold and should be rejected; long stays high for an extra
+512 cycles and should still trigger only once. The screen shows the number of
+accepted input pulses and the outcome of the last action. These are deterministic
+simulation stimuli, not a measurement of keyboard contact bounce or wall-clock
+key duration. Production timing remains 20 ms; the testbench uses five cycles.
+
+Simulation time pauses between keys. The same seed and key sequence reproduce
+the same hands. Rendering and changing profiles do not advance RTL time.
+The screen uses `/dev/tty` directly so simulator-wrapped stdout does not cause
+a fallback to line mode. Ctrl-C is read as an exit key rather than sending a
+signal to the simulator and its parent make processes. The screen restores the
+normal terminal on exit. To explicitly use the original line-command interface
+for scripts, run `make play-lines`: `deal`,
+`hold 1 3`, `hold none`, `draw`, `reset 42`, `show`, `help`, and `quit`.
+
+The terminal runs only when selected with `make play`, so normal tests never
+wait for keyboard input. `test_terminal.py` checks command handling, screen
+controls, short-press rejection, one action for a sustained press, bounce
+filtering, and release rearming through the integrated RTL.
 
 ## How to view the waveform file
 
