@@ -5,6 +5,11 @@
    that can be driven / tested by the cocotb test.py.
 */
 module tb ();
+`ifdef GL_TEST
+  localparam GATE_LEVEL = 1;
+`else
+  localparam GATE_LEVEL = 0;
+`endif
 
   // Dump the signals to a FST file. You can view it with gtkwave or surfer.
   initial begin
@@ -106,7 +111,11 @@ module tb ();
   wire VGND = 1'b0;
 `endif
 
-  tt_um_h4kyu_video_poker user_project (
+  tt_um_h4kyu_video_poker
+`ifndef GL_TEST
+  #(.DEBOUNCE_CYCLES(5))
+`endif
+  user_project (
 
       // Include power ports for the Gate Level test:
 `ifdef GL_TEST

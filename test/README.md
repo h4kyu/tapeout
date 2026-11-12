@@ -64,7 +64,23 @@ the standalone debounce unit.
 debounce interval. It verifies two-stage hold synchronization, short press and
 release rejection, exactly one pulse per sustained press, rearming after a stable
 release, and asynchronous reset. The production default remains 500,000 cycles.
-The adapter is not connected to the project wrapper yet.
+The adapter is connected to the project wrapper and poker core.
+
+## Integrated project tests
+
+`integrated_rounds` in `test.py` drives the wrapper's external inputs and reads
+its internal game-state wires. It checks complete seeded rounds, all/none/mixed
+holds, rejected short presses, held-button behavior, payouts, subsequent rounds,
+and reset during dealing. RTL tests override the wrapper's `DEBOUNCE_CYCLES`
+parameter to five; synthesis and gate-level simulation retain 500,000 cycles.
+The internal-state test does not exercise a flattened gate-level netlist; the
+gate-level wrapper test currently checks reset status and bidirectional outputs.
+Full gate-level gameplay coverage remains to be added.
+
+Until VGA is integrated, `uo_out` carries temporary status:
+`{can_deal, state[2:0], result_category[3:0]}`. These pins are not VGA signals.
+Cards, held flags, balance, category, payout, and state are named wires in
+`project.v` for the upcoming renderer and ASCII simulation interface.
 
 ## How to view the waveform file
 

@@ -6,14 +6,14 @@ SIM ?= icarus
 FST ?= -fst # Use more efficient FST format
 TOPLEVEL_LANG ?= verilog
 SRC_DIR = $(PWD)/../src
-PROJECT_SOURCES = project.v
+PROJECT_SOURCES = project.v debounce.v poker_inputs.v prng.v poker_dealer.v poker_evaluator.v poker_core.v
 UNIT_TEST_SOURCES = debounce.v poker_inputs.v prng.v poker_dealer.v poker_evaluator.v poker_core.v
 
 ifneq ($(GATES),yes)
 
 # RTL simulation:
 SIM_BUILD				= sim_build/rtl
-VERILOG_SOURCES += $(addprefix $(SRC_DIR)/,$(PROJECT_SOURCES))
+VERILOG_SOURCES += $(addprefix $(SRC_DIR)/,$(filter-out $(UNIT_TEST_SOURCES),$(PROJECT_SOURCES)))
 
 else
 

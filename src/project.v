@@ -5,7 +5,9 @@
 
 `default_nettype none
 
-module tt_um_h4kyu_video_poker (
+module tt_um_h4kyu_video_poker #(
+    parameter integer DEBOUNCE_CYCLES = 500_000
+) (
     input  wire [7:0] ui_in,    // Dedicated inputs
     output wire [7:0] uo_out,   // Dedicated outputs
     input  wire [7:0] uio_in,   // IOs: Input path
@@ -20,15 +22,13 @@ module tt_um_h4kyu_video_poker (
   assign uio_out = 0;
   assign uio_oe  = 0;
 
-  // Debounced deal/draw button
+  wire deal_draw_pulse;
+  wire [4:0] hold_mask;
 
-  wire deal_draw;
-
-  debounce deal_draw_debounce (
-    .button_in (ui_in[5]),
-    .button_out(deal_draw),
-    .clk       (clk),
-    .rst_n     (rst_n)
+  poker_inputs #(.DEBOUNCE_CYCLES(DEBOUNCE_CYCLES)) player_inputs (
+    .clk(clk), .rst_n(rst_n),
+    .deal_draw_in(ui_in[5]), .hold_in(ui_in[4:0]),
+    .deal_draw_pulse(deal_draw_pulse), .hold_mask(hold_mask)
   );
 
   // Pseudorandom number generator
@@ -44,15 +44,31 @@ module tt_um_h4kyu_video_poker (
     .rst_n     (rst_n)
   );
 
-  // TODO: assign uo_out to output of VGA renderer
-  // Temp: use prng_ready, candidate, deal_draw arbitrarily until they are used properly
-  // to prevent them from being optimized away
-  assign uo_out = {prng_ready, candidate, deal_draw};
-  // TODO: remove as inputs are implemented
-  // Temp: drive unimplemented inputs to 0 before they are connected to game logic
-  wire _temp_drive_zero = &{clk, rst_n, ui_in[4:0], 1'b0};
+  // Shared game-state interface for the renderer and RTL simulation display.
+  wire [29:0] cards;
+  wire [4:0] held_cards;
+  wire [2:0] state;
+  wire [15:0] balance;
+  wire [3:0] result_category;
+  wire [11:0] result_payout;
+  wire can_deal;
+
+  poker_core game (
+    .clk(clk), .rst_n(rst_n),
+    .deal_draw_pulse(deal_draw_pulse), .hold_mask(hold_mask),
+    .candidate(candidate), .prng_ready(prng_ready),
+    .dealer_ready(), .dealt_mask(),
+    .cards(cards), .held_cards(held_cards), .state(state),
+    .balance(balance), .result_category(result_category),
+    .result_payout(result_payout), .can_deal(can_deal)
+  );
+
+  // Temporary status pins until Luke's VGA renderer is connected.
+  // Keep the game observable to synthesis; this is not a VGA signal.
+  assign uo_out = {can_deal, state, result_category};
 
   // List all unused inputs to prevent warnings
-  wire _unused = &{ena, ui_in[7:6], 1'b0};
+  wire _unused = &{ena, ui_in[7:6], cards, held_cards,
+                   balance, result_payout, 1'b0};
 
 endmodule
