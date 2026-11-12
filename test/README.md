@@ -32,6 +32,12 @@ make -B FST=
 
 This will generate `tb.vcd` instead of `tb.fst`.
 
+## PRNG reset and seed tests
+
+`test_prng.py` is imported by `test.py` and runs with the normal RTL suite. It checks that asynchronous reset clears the PRNG output and `prng_ready` without a clock edge, and that both stay zero while reset is held. Releasing reset does not load the seed immediately: the first rising clock edge loads it and asserts `prng_ready`. The seed must be stable through that edge; a zero seed loads `8'h01` instead.
+
+The test compares complete LFSR sequences against a Python reference for several seeds, checks that later seed-input changes are ignored, and verifies reset and reseeding. In gate-level runs, this standalone PRNG test still exercises the RTL instance in `tb.v`.
+
 ## Poker core tests
 
 The game-logic tests run alongside the wrapper and debounce tests using the
