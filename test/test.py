@@ -6,6 +6,14 @@ from cocotb.clock import Clock
 from cocotb.triggers import ClockCycles
 
 from test_debounce import test_debounce
+from test_core import (
+    basic_deal_draw_round,
+    hold_switches_do_not_trigger_deal_or_draw,
+    evaluator_categories_and_reference,
+    rejection_holds_and_accounting,
+    all_hold_masks_and_random_rounds,
+    bankruptcy_overflow_and_reset,
+)
 
 
 @cocotb.test()
