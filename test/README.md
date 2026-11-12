@@ -82,6 +82,35 @@ Until VGA is integrated, `uo_out` carries temporary status:
 Cards, held flags, balance, category, payout, and state are named wires in
 `project.v` for the upcoming renderer and ASCII simulation interface.
 
+## ASCII simulation demo
+
+With the dependencies in `requirements.txt` installed and Icarus Verilog on
+your PATH, run from `test/`:
+
+```sh
+make demo
+```
+
+This runs the actual top-level RTL and prints cards, held indicators, balance,
+state, hand category, and payout to stdout. The fixed seed is 42. The script
+plays three rounds: hold cards 1 and 3, hold all five, and replace all five.
+It repeats the same command schedule and asserts identical results. Assertions
+also check holds, valid unique cards, discard rejection, and accounting against
+the Python reference evaluator. The demo is included in the normal RTL suite.
+
+`poker_sim.py` provides `PokerSim.reset(seed)`, `set_holds(*positions)` (positions
+1 through 5), `press_deal_draw()`, `wait_for_state(state)`, `advance(cycles)`, and
+`snapshot()`. It drives only external inputs; snapshots read internal RTL wires.
+Each printed command includes its simulation cycle for replay. A seed alone
+does not fix a hand: the free-running PRNG also depends on command timing.
+
+The testbench uses a five-cycle debounce interval for speed; production RTL
+keeps its 20 ms default. The driver reads the configured interval rather than
+bypassing debounce. Time advances at 25 MHz during driver operations and pauses
+between them. This is a scripted RTL simulation, with no VGA or interactive
+terminal commands yet, and requires internal signals unavailable in a flattened
+gate-level netlist. Interactive controls are the next step.
+
 ## How to view the waveform file
 
 Using GTKWave

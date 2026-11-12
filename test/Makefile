@@ -47,3 +47,7 @@ COCOTB_TEST_MODULES = test
 
 # include cocotb's make rules to take care of the simulator setup
 include $(shell cocotb-config --makefiles)/Makefile.sim
+
+.PHONY: demo
+demo:
+	$(MAKE) sim COCOTB_TEST_MODULES=poker_demo COCOTB_TEST_FILTER= COCOTB_TESTCASE=
