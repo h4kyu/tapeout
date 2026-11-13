@@ -86,10 +86,14 @@ action per accepted press. The wrapper's `DEBOUNCE_CYCLES` parameter defaults
 to 500,000 (20 ms at 25 MHz); RTL integration tests override it to five.
 
 Until VGA is connected, output pins expose the temporary status byte
-`{can_deal, state[2:0], result_category[3:0]}`. This mapping replaces the previous
+`{1'b0, state[2:0], result_category[3:0]}`. This mapping replaces the previous
 PRNG debug outputs and is not the final VGA pinout. Renderer-facing state is
 available as named wrapper wires. Area measurements before renderer integration
 are provisional because unused display-only logic may be optimized away.
+
+The terminal simulator derives deal availability from the exposed state and
+balance: state IDLE or RESULT, with at least five credits. It does not require a
+wrapper-level `can_deal` wire.
 
 Run `make` in `test/` with the pinned Python dependencies and Icarus Verilog installed. The shared testbench contains standalone core and evaluator instances, and `test.py` imports the core tests alongside the wrapper and debounce tests. GitHub's existing RTL test workflow runs the combined suite and reports results in `results.xml`. The core suite includes a basic deal/draw round, hold-switch independence, every hand category, 3,000 random hands, all 32 hold masks, invalid/duplicate rejection, accounting and reset.
 
