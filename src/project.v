@@ -52,12 +52,14 @@ module tt_um_h4kyu_video_poker #(
   wire [3:0] result_category;
   wire [11:0] result_payout;
   wire can_deal;
+  wire unused_dealer_ready;
+  wire [51:0] unused_dealt_mask;
 
   poker_core game (
     .clk(clk), .rst_n(rst_n),
     .deal_draw_pulse(deal_draw_pulse), .hold_mask(hold_mask),
     .candidate(candidate), .prng_ready(prng_ready),
-    .dealer_ready(), .dealt_mask(),
+    .dealer_ready(unused_dealer_ready), .dealt_mask(unused_dealt_mask),
     .cards(cards), .held_cards(held_cards), .state(state),
     .balance(balance), .result_category(result_category),
     .result_payout(result_payout), .can_deal(can_deal)
@@ -67,8 +69,9 @@ module tt_um_h4kyu_video_poker #(
   // Keep the game observable to synthesis; this is not a VGA signal.
   assign uo_out = {can_deal, state, result_category};
 
-  // List all unused inputs to prevent warnings
+  // List intentionally unused signals to prevent warnings.
   wire _unused = &{ena, ui_in[7:6], cards, held_cards,
-                   balance, result_payout, 1'b0};
+                   balance, result_payout, unused_dealer_ready,
+                   unused_dealt_mask, 1'b0};
 
 endmodule
