@@ -3,9 +3,7 @@
 import os
 from collections import deque
 
-import cocotb
-
-from poker_sim import PokerSim, STATES, CATEGORIES
+from sim.poker_sim import PokerSim, STATES, CATEGORIES
 
 
 HELP = """Commands:
@@ -211,19 +209,3 @@ class GameScreen:
             termios.tcsetattr(fd, termios.TCSADRAIN, previous)
             display.write("\x1b[?25h\x1b[?1049l")
             display.flush()
-
-
-@cocotb.test()
-async def interactive_poker(dut):
-    sim = PokerSim(dut)
-    await sim.reset()
-    if os.environ.get("POKER_LINE_MODE") == "1":
-        await PokerTerminal(sim).run()
-        return
-    try:
-        keyboard = open("/dev/tty", "r")
-    except OSError as error:
-        raise RuntimeError("No controlling terminal. Run make play in a terminal, "
-                           "or use make play-lines for line commands.") from error
-    with keyboard, open("/dev/tty", "w", buffering=1) as display:
-        await GameScreen(sim).run(keyboard, display)
