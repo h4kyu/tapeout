@@ -2,6 +2,12 @@
 
 The proposed Video Poker design is a five-card draw poker game with a VGA display. The display shows the dealt cards, which cards are held, the player's credit balance, and the result of each round. A 25 MHz input clock drives the game logic and VGA controller.
 
+Current implementation: the game core is connected to an inactive VGA interface
+stub. All RGB and sync pins are held low; no valid VGA signal or picture is
+generated yet. VGA timing and rendering are a later stage. The display-based
+testing instructions below describe the intended completed design; use the RTL
+simulator in `test/README.md` to exercise gameplay at this stage.
+
 The player starts with 100 credits. Pressing the Deal/Draw button starts a round, deducts a fixed wager of 5 credits, and deals five cards. Five active-high switches select the cards to hold. Pressing the button again keeps the selected cards and replaces the others. The final hand is evaluated, and its payout is added to the remaining balance.
 
 The payout schedule for one 5-credit wager is:

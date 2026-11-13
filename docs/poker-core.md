@@ -85,11 +85,14 @@ through the existing debounce filter and rising-edge detection, generating one
 action per accepted press. The wrapper's `DEBOUNCE_CYCLES` parameter defaults
 to 500,000 (20 ms at 25 MHz); RTL integration tests override it to five.
 
-Until VGA is connected, output pins expose the temporary status byte
-`{1'b0, state[2:0], result_category[3:0]}`. This mapping replaces the previous
-PRNG debug outputs and is not the final VGA pinout. Renderer-facing state is
-available as named wrapper wires. Area measurements before renderer integration
-are provisional because unused display-only logic may be optimized away.
+`project.v` connects the game-state wires to the `vga` interface and maps its
+RGB/sync outputs to the documented VGA pins. This stage is an inactive stub:
+all RGB and sync outputs are tied low, so `uo_out` is zero and does not produce
+a valid VGA signal. The temporary game-status byte has been removed. Timing
+and rendering will be implemented separately. The game remains observable to
+RTL simulation through the named wrapper wires, but synthesis can optimize it
+away while the stub ignores its inputs. Area measurements of this intermediate
+top level do not represent the completed game.
 
 The terminal simulator derives deal availability from the exposed state and
 balance: state IDLE or RESULT, with at least five credits. It does not require a

@@ -74,11 +74,14 @@ holds, rejected short presses, held-button behavior, payouts, subsequent rounds,
 and reset during dealing. RTL tests override the wrapper's `DEBOUNCE_CYCLES`
 parameter to five; synthesis and gate-level simulation retain 500,000 cycles.
 The internal-state test does not exercise a flattened gate-level netlist; the
-gate-level wrapper test currently checks reset status and bidirectional outputs.
+gate-level wrapper test currently checks the zero-output VGA stub and
+bidirectional outputs across reset.
 Full gate-level gameplay coverage remains to be added.
 
-Until VGA is integrated, `uo_out` carries temporary status:
-`{1'b0, state[2:0], result_category[3:0]}`. These pins are not VGA signals.
+The VGA interface is connected, but currently drives constant zero on all RGB
+and sync outputs. `uo_out` therefore stays zero; this is not a valid VGA signal.
+The temporary game-status output has been removed. Timing and rendering are
+reserved for the next stage.
 Cards, held flags, balance, category, payout, and state are named wires in
 `project.v` for the upcoming renderer and ASCII simulation interface.
 The simulator derives `can_deal` from state IDLE/RESULT and a balance of at least
