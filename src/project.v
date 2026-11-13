@@ -45,12 +45,14 @@ module tt_um_h4kyu_video_poker #(
   );
 
   // Shared game-state interface for the renderer and RTL simulation display.
-  wire [29:0] cards;
-  wire [4:0] held_cards;
-  wire [2:0] state;
-  wire [15:0] balance;
-  wire [3:0] result_category;
-  wire [11:0] result_payout;
+  // TODO: Remove these keeps once the VGA renderer consumes the game state.
+  // The inactive shell otherwise lets synthesis prune the entire poker core.
+  (* keep = 1 *) wire [29:0] cards;
+  (* keep = 1 *) wire [4:0] held_cards;
+  (* keep = 1 *) wire [2:0] state;
+  (* keep = 1 *) wire [15:0] balance;
+  (* keep = 1 *) wire [3:0] result_category;
+  (* keep = 1 *) wire [11:0] result_payout;
 
   poker_core game (
     .clk(clk), .rst_n(rst_n),
@@ -62,12 +64,36 @@ module tt_um_h4kyu_video_poker #(
     .result_payout(result_payout), .can_deal()
   );
 
-  // Temporary status pins until Luke's VGA renderer is connected.
-  // Keep the game observable to synthesis; this is not a VGA signal.
-  assign uo_out = {1'b0, state, result_category};
+  // VGA
 
-  // List intentionally unused signals to prevent warnings.
-  wire _unused = &{ena, ui_in[7:6], cards, held_cards,
-                   balance, result_payout, 1'b0};
+  wire [1:0] blue;
+  wire [1:0] green;
+  wire [1:0] red;
+  wire       hsync;
+  wire       vsync;
+
+  vga game_vga_renderer (
+    .cards          (cards),
+    .balance        (balance),
+    .held_cards     (held_cards),
+    .state          (state),
+    .result_category(result_category),
+    .result_payout  (result_payout),
+    .clk            (clk),
+    .rst_n          (rst_n),
+    .red            (red),
+    .green          (green),
+    .blue           (blue),
+    .hsync          (hsync),
+    .vsync          (vsync)
+  );
+
+  assign uo_out = {
+    hsync, blue[0], green[0], red[0],
+    vsync, blue[1], green[1], red[1]
+  };
+
+  // List unused signals to prevent warnings.
+  wire _unused = &{ena, ui_in[7:6], 1'b0};
 
 endmodule

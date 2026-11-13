@@ -22,7 +22,7 @@ from test_core import (
 
 @cocotb.test()
 async def test_project(dut):
-    """Reset status is also checked against the synthesized top level in GL runs."""
+    """The inactive VGA stub and bidirectional outputs stay zero across reset."""
     clock = Clock(dut.clk, 40, unit="ns")
     cocotb.start_soon(clock.start())
     dut.ena.value = 1
