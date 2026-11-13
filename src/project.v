@@ -62,12 +62,36 @@ module tt_um_h4kyu_video_poker #(
     .result_payout(result_payout), .can_deal()
   );
 
-  // Temporary status pins until Luke's VGA renderer is connected.
-  // Keep the game observable to synthesis; this is not a VGA signal.
-  assign uo_out = {1'b0, state, result_category};
+  // VGA
 
-  // List intentionally unused signals to prevent warnings.
-  wire _unused = &{ena, ui_in[7:6], cards, held_cards,
-                   balance, result_payout, 1'b0};
+  wire [1:0] blue;
+  wire [1:0] green;
+  wire [1:0] red;
+  wire       hsync;
+  wire       vsync;
+
+  vga game_vga_renderer (
+    .cards          (cards),
+    .balance        (balance),
+    .held_cards     (held_cards),
+    .state          (state),
+    .result_category(result_category),
+    .result_payout  (result_payout),
+    .clk            (clk),
+    .rst_n          (rst_n),
+    .red            (red),
+    .green          (green),
+    .blue           (blue),
+    .hsync          (hsync),
+    .vsync          (vsync)
+  );
+
+  assign uo_out = {
+    hsync, blue[0], green[0], red[0],
+    vsync, blue[1], green[1], red[1]
+  };
+
+  // List unused signals to prevent warnings.
+  wire _unused = &{ena, ui_in[7:6], 1'b0};
 
 endmodule
