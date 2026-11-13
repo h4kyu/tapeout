@@ -45,27 +45,12 @@ TOPLEVEL = tb
 # List test modules to run, separated by commas and without the .py suffix:
 COCOTB_TEST_MODULES = test
 
-# Native-only commands also work in ordinary Python without Cocotb installed.
-# An empty goal list retains Cocotb's default `sim` target.
-NATIVE_GOALS = native-build benchmark-vga test-vga-tools play-vga capture-vga
-ifneq ($(strip $(MAKECMDGOALS)),)
-ifeq ($(filter-out $(NATIVE_GOALS),$(MAKECMDGOALS)),)
-SKIP_COCOTB = yes
-endif
-endif
-ifneq ($(SKIP_COCOTB),yes)
+# Cocotb provides the default chip test target and gate-level simulation rules.
 include $(shell cocotb-config --makefiles)/Makefile.sim
-endif
 
-.PHONY: demo play play-lines play-vga capture-vga test-vga-tools
-demo:
-	$(MAKE) sim COCOTB_TEST_MODULES=sim.poker_demo COCOTB_TEST_FILTER= COCOTB_TESTCASE=
-
+.PHONY: play play-vga capture-vga test-sim
 play:
 	$(MAKE) sim COCOTB_TEST_MODULES=sim.poker_terminal COCOTB_TEST_FILTER= COCOTB_TESTCASE=
-
-play-lines:
-	POKER_LINE_MODE=1 $(MAKE) play
 
 # VGA playback and capture use the native Verilator model without waveforms.
 play-vga:
@@ -74,27 +59,9 @@ play-vga:
 capture-vga:
 	VGA_HEADLESS=1 $(MAKE) play-vga
 
-test-vga-tools:
-	python3 -m pytest -q sim/tests/test_vga_tools.py
-
-.PHONY: native-build benchmark-vga test-native
-native-build:
-	python3 -m sim.build_native
-
-benchmark-vga:
-	VGA_BENCHMARK=1 python3 -m sim.native_vga
-
-test-native: native-build
-	python3 -m pytest -q sim/tests/test_native.py
-	$(MAKE) sim COCOTB_TEST_MODULES=sim.tests.test_native_equivalence COCOTB_TEST_FILTER= COCOTB_TESTCASE= COCOTB_PLUSARGS="$(COCOTB_PLUSARGS) +NO_WAVES"
+test-sim:
+	python3 -m pytest -q sim/tests/test_vga_tools.py sim/tests/test_native.py
+	$(MAKE) sim COCOTB_TEST_MODULES=sim.tests.test_native_equivalence,sim.tests.test_terminal COCOTB_TEST_FILTER= COCOTB_TESTCASE= COCOTB_PLUSARGS="$(COCOTB_PLUSARGS) +NO_WAVES"
 	@! grep '<failure' results.xml
 	@mkdir -p output
-	cp results.xml output/native-results.xml
-
-.PHONY: test-sim
-test-sim:
-	$(MAKE) test-vga-tools
-	$(MAKE) test-native
-	$(MAKE) sim COCOTB_TEST_MODULES=sim.tests.test_harness COCOTB_TEST_FILTER= COCOTB_TESTCASE= COCOTB_PLUSARGS="$(COCOTB_PLUSARGS) +NO_WAVES"
-	@! grep '<failure' results.xml
-	cp results.xml output/harness-results.xml
+	cp results.xml output/sim-results.xml

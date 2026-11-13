@@ -1,4 +1,4 @@
-"""Uncapped native RTL viewer, deterministic capture, and separated benchmarks."""
+"""Uncapped native RTL viewer and deterministic headless capture."""
 import asyncio
 from dataclasses import asdict
 import json
@@ -7,7 +7,6 @@ from pathlib import Path
 from queue import Empty
 import time
 
-from sim.build_native import build
 from sim.poker_sim import PokerSim
 from sim.poker_controls import GameScreen, PokerTerminal
 from sim.vga_capture import Frame, FRAME_CLOCKS
@@ -29,45 +28,8 @@ def status(driver):
     return s, messages[s.status]
 
 
-async def benchmark(debounce):
-    report = {'build': json.loads(build(debounce).with_name('build.json').read_text())}
-    for decode in (False, True):
-        sim = PokerSim.native(debounce, decode)
-        try:
-            await sim.reset()
-            start = time.perf_counter()
-            while not sim.driver.metrics().ready and sim.cycles < 3 * FRAME_CLOCKS:
-                await sim.advance(16384)
-                if not decode and sim.cycles >= 2 * FRAME_CLOCKS:
-                    break
-            first = time.perf_counter() - start
-            if decode and not sim.driver.metrics().ready:
-                raise TimeoutError('Benchmark requires an active renderer producing complete VGA frames')
-            await sim.advance(10 * FRAME_CLOCKS)
-            start = time.perf_counter()
-            await sim.advance(120 * FRAME_CLOCKS)
-            elapsed = time.perf_counter() - start
-            s = sim.driver.metrics()
-            report['capture' if decode else 'execution'] = {
-                'clocks_per_second': 120 * FRAME_CLOCKS / elapsed,
-                'generated_fps': 120 / elapsed, 'first_frame_seconds': first if decode else None,
-                'measurement_seconds': elapsed, 'sync_errors': s.errors,
-            }
-        finally:
-            sim.close()
-    path = Path(os.environ.get('VGA_BENCHMARK_OUTPUT', 'output/vga-benchmark.json'))
-    path.parent.mkdir(parents=True, exist_ok=True)
-    path.write_text(json.dumps(report, indent=2) + '\n')
-    print(json.dumps(report, indent=2), flush=True)
-    if report['capture']['clocks_per_second'] < 12_600_000:
-        raise RuntimeError('Native decoding missed the 12.6 MHz / 30 FPS target; profile before accepting')
-
-
 async def run():
     debounce = int(os.environ.get('VGA_DEBOUNCE_CYCLES', '5'))
-    if os.environ.get('VGA_BENCHMARK') == '1':
-        await benchmark(debounce)
-        return
     sim = PokerSim.native(debounce)
     server = None
     try:

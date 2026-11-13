@@ -37,8 +37,7 @@ jobs:
         with:
           paths: |
             test/results.xml
-            test/output/native-results.xml
-            test/output/harness-results.xml
+            test/output/sim-results.xml
         if: always()
 
       - name: upload waveform and test results
