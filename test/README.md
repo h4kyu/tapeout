@@ -16,10 +16,9 @@ sim/
   poker_sim.py          shared gameplay driver and Cocotb adapter
   poker_controls.py     backend-independent terminal/browser controls
   poker_terminal.py     interactive Cocotb terminal entrypoint
-  poker_demo.py         scripted Cocotb demonstration
   native_sim.py         ctypes adapter for the native model
   build_native.py       incremental Verilator build
-  native_vga.py         viewer, headless capture, and benchmark entrypoint
+  native_vga.py         viewer and headless capture entrypoint
   vga_capture.py        independent Python reference decoder and PNG encoder
   vga_viewer.py         HTTP transport
   vga_viewer.html       browser UI
@@ -29,10 +28,21 @@ sim/
 
 From `test/`, `make` runs chip functionality tests. `make test-sim` runs all
 auxiliary checks: host-side viewer/decoder tests, native contracts and
-Cocotb equivalence, terminal controls, the scripted demo, and batching checks.
-CI runs both suites. `make test-native` and `make test-vga-tools` remain available
-for narrower checks. Interactive commands (`make play`, `make play-lines`,
-`make play-vga`), `make demo`, captures, and benchmarks keep the same names.
+Cocotb equivalence, terminal controls, and batching checks.
+CI runs both suites. The public commands are:
+
+| Command | Purpose |
+| --- | --- |
+| `make` | Chip functionality tests |
+| `make GATES=yes` | Gate-level tests |
+| `make test-sim` | All simulation/harness checks |
+| `make play` | Interactive terminal simulator |
+| `make play-vga` | Native VGA viewer |
+| `make capture-vga` | Headless PNG capture |
+
+Make commands use the dev-container dependencies, including Cocotb. Native
+models build automatically when needed.
+For a narrower host-side check, run pytest against a file under `sim/tests/`.
 
 Modules use package imports, for example `from sim.poker_sim import PokerSim`.
 Run Python entrypoints from `test/` with `python3 -m sim.native_vga` or
@@ -128,7 +138,7 @@ five credits instead of reading an unused wrapper wire.
 The VGA frontend observes the real `uo_out` RGB/sync pins on every clock driven
 by `PokerSim`, including clocks consumed by button presses and resets. It does
 not draw cards from game state or read the renderer's internal pixel counters.
-The terminal remains available through `make play` and `make play-lines`.
+The terminal remains available through `make play`.
 
 Run these commands **inside the dev container**, from `test/`, with the existing
 `requirements.txt` dependencies installed. No additional Python packages are
@@ -186,10 +196,7 @@ connections to avoid truncated large responses on forwarded ports.
 make play-vga                             # Verilator, uncapped
 make capture-vga                          # Verilator PNG + JSON
 VGA_DEBOUNCE_CYCLES=500000 make play-vga    # production debounce
-make benchmark-vga                        # execution and capture throughput
 make test-sim                             # all auxiliary simulation/harness tests
-make test-native                          # native contracts + Cocotb equivalence
-make test-vga-tools                       # Python capture/transport tests
 make                                      # existing Icarus RTL suite
 ```
 
@@ -240,10 +247,9 @@ execution about 21.9 million clocks/second, and capture about 19.9 million
 clocks/second (47 generated FPS). The forwarded browser sustained approximately
 29–30 displayed FPS after warm-up, with responsive deal/hold/draw controls and no
 sync errors. These measurements depend on the machine and renderer complexity.
-The acceptance floor is 12.6 million clocks/second with decoding (30 generated
-FPS). `benchmark-vga` measures after warm-up, writes `output/vga-benchmark.json`,
-and fails if capture throughput misses that floor; browser FPS is measured
-separately in the live page.
+The performance target is 12.6 million clocks/second with decoding (30 generated
+FPS). The live page reports simulation throughput, generated FPS, and displayed
+FPS separately.
 
 Native correctness tests compare snapshots, accepted pulses, cycle counts,
 directed output-pin traces, and complete RGB frames against Cocotb. Synthetic
@@ -251,34 +257,20 @@ signals exercise palette/alignment, partial frames, reset, inactive sync,
 malformed sync, and blanking in both decoders. CI installs Verilator and runs
 these checks alongside the existing RTL and viewer tests.
 
-## ASCII simulation demo
-
-With the dependencies in `requirements.txt` installed and Icarus Verilog on
-your PATH, run from `test/`:
-
-```sh
-make demo
-```
-
-This runs the actual top-level RTL and prints cards, held indicators, balance,
-state, hand category, and payout to stdout. The fixed seed is 42. The script
-plays three rounds: hold cards 1 and 3, hold all five, and replace all five.
-It repeats the same command schedule and asserts identical results. Assertions
-also check holds, valid unique cards, discard rejection, and accounting against
-the Python reference evaluator. The demo is included in `make test-sim`.
+## Shared simulation driver
 
 `sim/poker_sim.py` provides `PokerSim.reset(seed)`, `set_holds(*positions)` (positions
 1 through 5), `press_deal_draw()`, `wait_for_state(state)`, `advance(cycles)`, and
 `snapshot()`. It drives only external inputs; snapshots read internal RTL wires.
-Each printed command includes its simulation cycle for replay. A seed alone
-does not fix a hand: the free-running PRNG also depends on command timing.
+A seed alone does not fix a hand: the free-running PRNG also depends on command
+timing. Deterministic replay requires the same inputs at the same cycles.
 
 The testbench uses a five-cycle debounce interval for speed; production RTL
 keeps its 20 ms default. The driver reads the configured interval rather than
 bypassing debounce. Time advances at 25 MHz during driver operations and pauses
-between them. This is a scripted RTL simulation, with no VGA or interactive
-terminal commands, and requires internal signals unavailable in a flattened
-gate-level netlist. For interactive controls, use the terminal below.
+between them in the terminal; the VGA viewer advances continuously. Game-state
+diagnostics require internal signals unavailable in a flattened gate-level
+netlist.
 
 ## Interactive terminal
 
@@ -313,7 +305,7 @@ The screen uses `/dev/tty` directly so simulator-wrapped stdout does not cause
 a fallback to line mode. Ctrl-C is read as an exit key rather than sending a
 signal to the simulator and its parent make processes. The screen restores the
 normal terminal on exit. To explicitly use the original line-command interface
-for scripts, run `make play-lines`: `deal`,
+for scripts, run `POKER_LINE_MODE=1 make play`: `deal`,
 `hold 1 3`, `hold none`, `draw`, `reset 42`, `show`, `help`, and `quit`.
 
 The terminal runs only when selected with `make play`, so normal tests never

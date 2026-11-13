@@ -15,6 +15,6 @@ async def interactive_poker(dut):
         keyboard = open("/dev/tty", "r")
     except OSError as error:
         raise RuntimeError("No controlling terminal. Run make play in a terminal, "
-                           "or use make play-lines for line commands.") from error
+                           "or use POKER_LINE_MODE=1 make play for line commands.") from error
     with keyboard, open("/dev/tty", "w", buffering=1) as display:
         await GameScreen(sim).run(keyboard, display)

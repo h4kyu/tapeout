@@ -1,4 +1,4 @@
-"""Fast host-side tests; run with make test-vga-tools, no simulator needed."""
+"""Fast host-side tests; included in make test-sim, no simulator needed."""
 
 import json
 from queue import Empty
