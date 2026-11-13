@@ -5,6 +5,11 @@
    that can be driven / tested by the cocotb test.py.
 */
 module tb ();
+`ifdef GL_TEST
+  localparam GATE_LEVEL = 1;
+`else
+  localparam GATE_LEVEL = 0;
+`endif
 
   // Dump the signals to a FST file. You can view it with gtkwave or surfer.
   initial begin
@@ -34,6 +39,20 @@ module tb ();
       .rst_n     (debounce_rst_n),
       .button_in (debounce_button_in),
       .button_out(debounce_button_out)
+  );
+
+  // Standalone player input adapter.
+  reg inputs_clk = 0;
+  reg inputs_rst_n = 1;
+  reg inputs_button = 0;
+  reg [4:0] inputs_holds = 0;
+  wire inputs_pulse;
+  wire [4:0] inputs_hold_mask;
+
+  poker_inputs #(.DEBOUNCE_CYCLES(5)) inputs_unit (
+      .clk(inputs_clk), .rst_n(inputs_rst_n),
+      .deal_draw_in(inputs_button), .hold_in(inputs_holds),
+      .deal_draw_pulse(inputs_pulse), .hold_mask(inputs_hold_mask)
   );
 
   // Standalone PRNG unit
@@ -92,7 +111,11 @@ module tb ();
   wire VGND = 1'b0;
 `endif
 
-  tt_um_h4kyu_video_poker user_project (
+  tt_um_h4kyu_video_poker
+`ifndef GL_TEST
+  #(.DEBOUNCE_CYCLES(5))
+`endif
+  user_project (
 
       // Include power ports for the Gate Level test:
 `ifdef GL_TEST

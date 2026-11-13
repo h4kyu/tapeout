@@ -58,6 +58,100 @@ Results for the combined suite are written to `results.xml` by the existing CI
 test step. In gate-level simulation, these standalone units use RTL, just like
 the standalone debounce unit.
 
+## Player input adapter tests
+
+`test_inputs.py` checks the standalone `poker_inputs` adapter with a five-cycle
+debounce interval. It verifies two-stage hold synchronization, short press and
+release rejection, exactly one pulse per sustained press, rearming after a stable
+release, and asynchronous reset. The production default remains 500,000 cycles.
+The adapter is connected to the project wrapper and poker core.
+
+## Integrated project tests
+
+`integrated_rounds` in `test.py` drives the wrapper's external inputs and reads
+its internal game-state wires. It checks complete seeded rounds, all/none/mixed
+holds, rejected short presses, held-button behavior, payouts, subsequent rounds,
+and reset during dealing. RTL tests override the wrapper's `DEBOUNCE_CYCLES`
+parameter to five; synthesis and gate-level simulation retain 500,000 cycles.
+The internal-state test does not exercise a flattened gate-level netlist; the
+gate-level wrapper test currently checks reset status and bidirectional outputs.
+Full gate-level gameplay coverage remains to be added.
+
+Until VGA is integrated, `uo_out` carries temporary status:
+`{can_deal, state[2:0], result_category[3:0]}`. These pins are not VGA signals.
+Cards, held flags, balance, category, payout, and state are named wires in
+`project.v` for the upcoming renderer and ASCII simulation interface.
+
+## ASCII simulation demo
+
+With the dependencies in `requirements.txt` installed and Icarus Verilog on
+your PATH, run from `test/`:
+
+```sh
+make demo
+```
+
+This runs the actual top-level RTL and prints cards, held indicators, balance,
+state, hand category, and payout to stdout. The fixed seed is 42. The script
+plays three rounds: hold cards 1 and 3, hold all five, and replace all five.
+It repeats the same command schedule and asserts identical results. Assertions
+also check holds, valid unique cards, discard rejection, and accounting against
+the Python reference evaluator. The demo is included in the normal RTL suite.
+
+`poker_sim.py` provides `PokerSim.reset(seed)`, `set_holds(*positions)` (positions
+1 through 5), `press_deal_draw()`, `wait_for_state(state)`, `advance(cycles)`, and
+`snapshot()`. It drives only external inputs; snapshots read internal RTL wires.
+Each printed command includes its simulation cycle for replay. A seed alone
+does not fix a hand: the free-running PRNG also depends on command timing.
+
+The testbench uses a five-cycle debounce interval for speed; production RTL
+keeps its 20 ms default. The driver reads the configured interval rather than
+bypassing debounce. Time advances at 25 MHz during driver operations and pauses
+between them. This is a scripted RTL simulation, with no VGA or interactive
+terminal commands, and requires internal signals unavailable in a flattened
+gate-level netlist. For interactive controls, use the terminal below.
+
+## Interactive terminal
+
+From `test/` with the test environment activated:
+
+```sh
+make play
+```
+
+The terminal now opens a persistent game screen (use a terminal at least 72
+columns wide). Balance, wager, cards, held indicators, result, and payout stay
+visible. No Enter key is required:
+
+- **Space** presses the Deal/Draw button.
+- **1–5** toggle the corresponding hold switches.
+- **B** cycles button profiles: clean, bounce, short, long.
+- **R** resets to 100 credits with seed 42.
+- **Q** quits; Ctrl-C also restores the terminal before exiting.
+
+The button profiles drive waveforms on the real `ui_in[5]` input, through the
+synchronizer, debounce module, and pulse detector. Clean uses a stable press;
+bounce adds one-cycle chatter on both press and release; short lasts less than
+the debounce threshold and should be rejected; long stays high for an extra
+512 cycles and should still trigger only once. The screen shows the number of
+accepted input pulses and the outcome of the last action. These are deterministic
+simulation stimuli, not a measurement of keyboard contact bounce or wall-clock
+key duration. Production timing remains 20 ms; the testbench uses five cycles.
+
+Simulation time pauses between keys. The same seed and key sequence reproduce
+the same hands. Rendering and changing profiles do not advance RTL time.
+The screen uses `/dev/tty` directly so simulator-wrapped stdout does not cause
+a fallback to line mode. Ctrl-C is read as an exit key rather than sending a
+signal to the simulator and its parent make processes. The screen restores the
+normal terminal on exit. To explicitly use the original line-command interface
+for scripts, run `make play-lines`: `deal`,
+`hold 1 3`, `hold none`, `draw`, `reset 42`, `show`, `help`, and `quit`.
+
+The terminal runs only when selected with `make play`, so normal tests never
+wait for keyboard input. `test_terminal.py` checks command handling, screen
+controls, short-press rejection, one action for a sustained press, bounce
+filtering, and release rearming through the integrated RTL.
+
 ## How to view the waveform file
 
 Using GTKWave

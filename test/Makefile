@@ -6,14 +6,14 @@ SIM ?= icarus
 FST ?= -fst # Use more efficient FST format
 TOPLEVEL_LANG ?= verilog
 SRC_DIR = $(PWD)/../src
-PROJECT_SOURCES = project.v
-UNIT_TEST_SOURCES = debounce.v prng.v poker_dealer.v poker_evaluator.v poker_core.v
+PROJECT_SOURCES = project.v debounce.v poker_inputs.v prng.v poker_dealer.v poker_evaluator.v poker_core.v
+UNIT_TEST_SOURCES = debounce.v poker_inputs.v prng.v poker_dealer.v poker_evaluator.v poker_core.v
 
 ifneq ($(GATES),yes)
 
 # RTL simulation:
 SIM_BUILD				= sim_build/rtl
-VERILOG_SOURCES += $(addprefix $(SRC_DIR)/,$(PROJECT_SOURCES))
+VERILOG_SOURCES += $(addprefix $(SRC_DIR)/,$(filter-out $(UNIT_TEST_SOURCES),$(PROJECT_SOURCES)))
 
 else
 
@@ -47,3 +47,13 @@ COCOTB_TEST_MODULES = test
 
 # include cocotb's make rules to take care of the simulator setup
 include $(shell cocotb-config --makefiles)/Makefile.sim
+
+.PHONY: demo play play-lines
+demo:
+	$(MAKE) sim COCOTB_TEST_MODULES=poker_demo COCOTB_TEST_FILTER= COCOTB_TESTCASE=
+
+play:
+	$(MAKE) sim COCOTB_TEST_MODULES=poker_terminal COCOTB_TEST_FILTER= COCOTB_TESTCASE=
+
+play-lines:
+	POKER_LINE_MODE=1 $(MAKE) play

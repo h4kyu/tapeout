@@ -79,6 +79,18 @@ Ace is high except in A-2-3-4-5. Category precedence selects the strongest appli
 
 ## Integration and validation
 
+`project.v` now connects `poker_inputs`, the free-running PRNG, and `poker_core`.
+Hold switches pass through two synchronization registers. The button passes
+through the existing debounce filter and rising-edge detection, generating one
+action per accepted press. The wrapper's `DEBOUNCE_CYCLES` parameter defaults
+to 500,000 (20 ms at 25 MHz); RTL integration tests override it to five.
+
+Until VGA is connected, output pins expose the temporary status byte
+`{can_deal, state[2:0], result_category[3:0]}`. This mapping replaces the previous
+PRNG debug outputs and is not the final VGA pinout. Renderer-facing state is
+available as named wrapper wires. Area measurements before renderer integration
+are provisional because unused display-only logic may be optimized away.
+
 Run `make` in `test/` with the pinned Python dependencies and Icarus Verilog installed. The shared testbench contains standalone core and evaluator instances, and `test.py` imports the core tests alongside the wrapper and debounce tests. GitHub's existing RTL test workflow runs the combined suite and reports results in `results.xml`. The core suite includes a basic deal/draw round, hold-switch independence, every hand category, 3,000 random hands, all 32 hold masks, invalid/duplicate rejection, accounting and reset.
 
 The combinational evaluator and variable-index dealer still need synthesis and timing measurement at 25 MHz, and a tile-fit check. Passing behavioral simulation alone does not establish timing closure or fit in the currently configured tile.
