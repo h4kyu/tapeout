@@ -6,7 +6,7 @@ ENV PDK_ROOT=/home/vscode/ttsetup/pdk
 ENV PDK=gf180mcuD
 
 RUN apt update
-RUN apt install -y iverilog gtkwave python3 python3-pip python3-venv python3-tk python-is-python3 libcairo2 verilator libpng-dev libqhull-dev
+RUN apt install -y iverilog gtkwave python3 python3-pip python3-venv python3-tk python-is-python3 libcairo2 verilator g++ make libpng-dev libqhull-dev
 
 # Install Python packages in a virtual environment (Ubuntu manages system Python).
 RUN python3 -m venv /opt/venv

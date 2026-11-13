@@ -13,8 +13,10 @@ module tb ();
 
   // Dump the signals to a FST file. You can view it with gtkwave or surfer.
   initial begin
-    $dumpfile("tb.fst");
-    $dumpvars(0, tb);
+    if (!$test$plusargs("NO_WAVES")) begin
+      $dumpfile("tb.fst");
+      $dumpvars(0, tb);
+    end
     #1;
   end
 
@@ -27,6 +29,41 @@ module tb ();
   wire [7:0] uo_out;
   wire [7:0] uio_out;
   wire [7:0] uio_oe;
+
+`ifndef GL_TEST
+  // Verification acceleration: execute a requested batch entirely in HDL,
+  // exporting one byte of external pins per pixel clock. Normal tests never
+  // assert preview_start and continue to drive clk themselves.
+  reg preview_start = 0;
+  reg preview_done = 0;
+  reg [31:0] preview_cycles = 0;
+  reg [31:0] preview_presses = 0;
+  integer preview_file = 0;
+  integer preview_i;
+  integer preview_seek;
+  always @(posedge preview_start) begin
+    preview_done = 0;
+    preview_presses = 0;
+    if (preview_file == 0) begin
+      preview_file = $fopen("output/vga-pins.bin", "wb");
+      if (preview_file == 0) $fatal(1, "Cannot open VGA pin capture file");
+    end
+    // Reuse one bounded batch buffer, rather than grow a file forever.
+    preview_seek = $fseek(preview_file, 0, 0);
+    if (preview_seek != 0) $fatal(1, "Cannot rewind VGA pin capture file");
+    for (preview_i = 0; preview_i < preview_cycles; preview_i = preview_i + 1) begin
+      clk = 0;
+      #20;
+      if ($isunknown(uo_out)) $fatal(1, "Unknown X/Z on VGA output pins");
+      $fwrite(preview_file, "%c", uo_out);
+      if (user_project.deal_draw_pulse) preview_presses = preview_presses + 1;
+      clk = 1;
+      #20;
+    end
+    $fflush(preview_file);
+    preview_done = 1;
+  end
+`endif
 
   // Standalone debounce unit, independent of the project's button wiring.
   reg debounce_clk;

@@ -2,7 +2,7 @@
 
 import cocotb
 
-from poker_sim import PokerSim
+from sim.poker_sim import PokerSim
 from test_core import PAYOUTS, reference
 
 

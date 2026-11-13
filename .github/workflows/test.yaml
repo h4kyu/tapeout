@@ -9,9 +9,9 @@ jobs:
         with:
           submodules: recursive
 
-      - name: Install iverilog
+      - name: Install RTL simulators
         shell: bash
-        run: sudo apt-get update && sudo apt-get install -y iverilog
+        run: sudo apt-get update && sudo apt-get install -y iverilog verilator g++ make
 
       # Set Python up and install cocotb
       - name: Setup python
@@ -26,6 +26,7 @@ jobs:
       - name: Run tests
         run: |
           cd test
+          make test-sim
           make clean
           make
           # make will return success even if the test fails, so check for failure in the results.xml
@@ -34,7 +35,10 @@ jobs:
       - name: Test Summary
         uses: test-summary/action@v2.4
         with:
-          paths: "test/results.xml"
+          paths: |
+            test/results.xml
+            test/output/native-results.xml
+            test/output/harness-results.xml
         if: always()
 
       - name: upload waveform and test results
