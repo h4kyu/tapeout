@@ -179,13 +179,15 @@ class PokerSim:
     def snapshot(self):
         return self.driver.snapshot()
 
-    async def reset(self, seed=42):
+    async def reset(self, seed=42, *, preserve_switches=False):
+        """Reset RTL; interactive resets can retain physical hold positions."""
         if not 0 <= seed <= 255:
             raise ValueError("Seed must be between 0 and 255")
-        self.holds = 0
+        if not preserve_switches:
+            self.holds = 0
         self.cycles = 0
         self.accepted_presses = 0
-        self.driver.write(clk=0, ena=1, ui_in=0, uio_in=seed, rst_n=0)
+        self.driver.write(clk=0, ena=1, ui_in=self.holds, uio_in=seed, rst_n=0)
         await self.advance(3)
         self.driver.write(rst_n=1)
         await self.advance(3)

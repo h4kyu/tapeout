@@ -96,6 +96,7 @@ async def run():
                     rate_start = now; rate_cycles = sim.cycles; rate_frames = s.frames
                 viewer.publish({'frame': s.frames, 'reset': reset, 'cycles': sim.cycles,
                                 'message': message, 'has_frame': bool(s.ready),
+                                'switch_mask': sim.holds, 'held_cards': sim.snapshot().holds,
                                 'details': screen.render().replace('Simulation pauses between keys.', 'Simulation runs uncapped.'),
                                 'backend': 'Verilator', 'clocks_per_second': clocks_per_second,
                                 'generated_fps': generated_fps, 'sync_errors': s.errors})

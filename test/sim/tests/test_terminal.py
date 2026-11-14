@@ -27,7 +27,7 @@ async def terminal_commands(dut):
         assert sim.snapshot() == before
         assert sim.cycles == cycles
 
-    for command in ("draw", "hold 1", "reset -1", "reset 256", "reset abc", "deal extra", "wat"):
+    for command in ("draw", "reset -1", "reset 256", "reset abc", "deal extra", "wat"):
         await reject(command)
 
     await terminal.command("deal")
@@ -120,3 +120,75 @@ async def game_screen_and_button_profiles(dut):
     assert not await screen.key("q")
     assert not await screen.key("\x03")  # Ctrl-C is an exit key, not SIGINT.
     assert not await screen.key("\x04")
+
+
+@cocotb.test()
+async def physical_hold_switches(dut):
+    """Raw switches stay independent of latched holds, on both backends."""
+    if int(dut.GATE_LEVEL.value):
+        return
+
+    reference_run = None
+    for native in (False, True):
+        sim = PokerSim.native() if native else PokerSim(dut)
+        records = []
+        screen = GameScreen(sim)
+        terminal = PokerTerminal(sim, output=lambda *_: None)
+
+        def check(switches, held, state):
+            snapshot = sim.snapshot()
+            assert sim.holds == switches
+            assert snapshot.holds == held
+            assert snapshot.state == state
+            records.append((sim.holds, snapshot, sim.cycles, sim.accepted_presses))
+
+        try:
+            await sim.reset(42)
+            await screen.key("1")
+            await screen.key("3")
+            check(0b00101, 0, 0)  # Preset physical switches while idle.
+            await screen.key(" ")
+            check(0b00101, 0b00101, 2)
+            await screen.key(" ")
+            check(0b00101, 0b00101, 5)
+
+            await screen.key("1")
+            check(0b00100, 0b00101, 5)
+            await screen.key("2")
+            check(0b00110, 0b00101, 5)
+            await screen.key("2")
+            check(0b00100, 0b00101, 5)  # Toggle the raw mask, not frozen holds.
+            await screen.key("r")
+            check(0b00100, 0, 0)  # Reset clears core state, not switches.
+            await screen.key(" ")
+            check(0b00100, 0b00100, 2)
+            await screen.key(" ")
+            check(0b00100, 0b00100, 5)
+
+            await terminal.command("hold none")
+            check(0, 0b00100, 5)
+            await terminal.command("reset 53")
+            check(0, 0, 0)
+            await terminal.command("hold 2 5")
+            check(0b10010, 0, 0)
+            await terminal.command("deal")
+            check(0b10010, 0b10010, 2)  # Deal never moves the switches.
+            await terminal.command("draw")
+            check(0b10010, 0b10010, 5)
+            await terminal.command("hold 1")
+            check(1, 0b10010, 5)
+            await terminal.command("reset 42")
+            check(1, 0, 0)
+            await terminal.command("deal")
+            check(1, 1, 2)
+
+            # Existing deterministic test setup can still explicitly reset all
+            # controls: reset() defaults to a fresh session rather than a board reset.
+            await sim.reset(42, preserve_switches=False)
+            check(0, 0, 0)
+            if reference_run is None:
+                reference_run = records
+            else:
+                assert records == reference_run
+        finally:
+            sim.close()

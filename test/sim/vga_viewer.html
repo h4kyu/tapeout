@@ -13,6 +13,7 @@
   #waiting { position:absolute; inset:0; display:grid; place-content:center; padding:32px; text-align:center; background:#000b; }
   aside { flex:1; min-width:260px; } pre { white-space:pre-wrap; font-size:13px; line-height:1.6; }
   button,a { font:inherit; } button { cursor:pointer; background:#30363c; color:white; border:1px solid #555; border-radius:6px; padding:10px 14px; margin:0 5px 8px 0; }
+  button[aria-pressed="true"] { background:#35634b; border-color:#8fcea8; }
   button:hover { background:#444d56; } #connection { min-height:1.5em; color:#dfbd73; }
   a { color:#a5d8ff; } #message { margin-top:12px; }
 </style>
@@ -24,10 +25,10 @@
     <div id="connection">Connecting…</div>
     <div id="message"></div><pre id="details"></pre>
     <button data-key=" ">Space · Deal / Draw</button><button data-key="r">R · Reset</button>
-    <div><button data-key="1">1</button><button data-key="2">2</button><button data-key="3">3</button><button data-key="4">4</button><button data-key="5">5</button> Hold</div>
+    <div><button data-key="1" aria-pressed="false">1 OFF</button><button data-key="2" aria-pressed="false">2 OFF</button><button data-key="3" aria-pressed="false">3 OFF</button><button data-key="4" aria-pressed="false">4 OFF</button><button data-key="5" aria-pressed="false">5 OFF</button> Hold switches</div>
     <div><button data-key="b">B · Button profile</button><button data-key="q">Q · Stop</button></div>
     <p><a href="/frame.png" target="_blank" rel="noopener">Open latest PNG</a></p>
-    <p class="muted">Keyboard: Space, 1–5, R, B, Q. Controls and game state use PokerSim; the VGA image is captured independently.</p>
+    <p class="muted">Keyboard: Space, 1–5, R, B, Q. Switches stay set across deals and resets. HOLD labels show the core’s held cards. Controls and game state use PokerSim; the VGA image is captured independently.</p>
   </aside>
 </div>
 <script>
@@ -52,6 +53,15 @@ async function poll(){
     document.querySelector('#connection').textContent=`Connected · ${s.backend ?? "RTL"} · ${((s.clocks_per_second ?? 0)/1e6).toFixed(1)} MHz · ${(s.generated_fps ?? 0).toFixed(1)} generated FPS · ${displayedFPS.toFixed(1)} displayed FPS · frame ${s.frame}`;
     document.querySelector('#message').textContent=s.message;
     document.querySelector('#details').textContent=s.details ?? '';
+    document.querySelectorAll('[data-key]').forEach(button=>{
+      const position=Number(button.dataset.key);
+      if(Number.isInteger(position) && position>=1 && position<=5){
+        const on=Boolean((s.switch_mask ?? 0) & (1 << (position-1)));
+        button.setAttribute('aria-pressed',String(on));
+        button.setAttribute('aria-label',`Hold switch ${position}: ${on?'ON':'OFF'}`);
+        button.textContent=`${position} ${on?'ON':'OFF'}`;
+      }
+    });
     if(s.reset!==lastReset){lastReset=s.reset;shown=-1;ctx.clearRect(0,0,640,480);}
     waiting.style.display=s.has_frame?'none':'grid';waiting.textContent=s.message;
 
