@@ -1,0 +1,79 @@
+<!doctype html>
+<html lang="en">
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Video Poker · RTL VGA</title>
+<style>
+  :root { color-scheme:dark; font-family:system-ui,sans-serif; background:#151719; color:#eee; }
+  body { max-width:1120px; margin:32px auto; padding:0 20px; }
+  h1 { font-size:24px; margin-bottom:6px; }
+  .muted { color:#aaa; } .layout { display:flex; flex-wrap:wrap; align-items:flex-start; gap:24px; margin-top:24px; }
+  .screen { width:640px; max-width:100%; position:relative; aspect-ratio:4/3; background:#000; }
+  canvas { width:100%; height:auto; display:block; image-rendering:pixelated; }
+  #waiting { position:absolute; inset:0; display:grid; place-content:center; padding:32px; text-align:center; background:#000b; }
+  aside { flex:1; min-width:260px; } pre { white-space:pre-wrap; font-size:13px; line-height:1.6; }
+  button,a { font:inherit; } button { cursor:pointer; background:#30363c; color:white; border:1px solid #555; border-radius:6px; padding:10px 14px; margin:0 5px 8px 0; }
+  button:hover { background:#444d56; } #connection { min-height:1.5em; color:#dfbd73; }
+  a { color:#a5d8ff; } #message { margin-top:12px; }
+</style>
+<h1>Video Poker <span class="muted">/ RTL VGA</span></h1>
+<div class="muted">Actual RGB and sync pins · 640×480 · simulation speed may be slower than real time</div>
+<div class="layout">
+  <div class="screen"><canvas id="screen" width="640" height="480"></canvas><div id="waiting">Waiting for VGA sync</div></div>
+  <aside>
+    <div id="connection">Connecting…</div>
+    <div id="message"></div><pre id="details"></pre>
+    <button data-key=" ">Space · Deal / Draw</button><button data-key="r">R · Reset</button>
+    <div><button data-key="1">1</button><button data-key="2">2</button><button data-key="3">3</button><button data-key="4">4</button><button data-key="5">5</button> Hold</div>
+    <div><button data-key="b">B · Button profile</button><button data-key="q">Q · Stop</button></div>
+    <p><a href="/frame.png" target="_blank" rel="noopener">Open latest PNG</a></p>
+    <p class="muted">Keyboard: Space, 1–5, R, B, Q. Controls and game state use PokerSim; the VGA image is captured independently.</p>
+  </aside>
+</div>
+<script>
+const canvas=document.querySelector('#screen'), ctx=canvas.getContext('2d');
+const waiting=document.querySelector('#waiting');
+let shown=-1, lastReset=-1, busy=false, frameBusy=false, lastFetch=0;
+let displayed=0, displayedFPS=0, fpsStart=performance.now();
+async function key(key) {
+  try { const r=await fetch('/key',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({key})});
+    if(!r.ok) document.querySelector('#connection').textContent=await r.text();
+  } catch { document.querySelector('#connection').textContent='Simulation disconnected'; }
+}
+document.querySelectorAll('[data-key]').forEach(b=>b.addEventListener('click',()=>key(b.dataset.key)));
+document.addEventListener('keydown',e=>{
+  if(e.repeat || e.ctrlKey || e.metaKey || e.altKey) return;
+  const k=e.key.toLowerCase(); if([' ','1','2','3','4','5','r','b','q'].includes(k)){e.preventDefault();key(k);}
+});
+async function poll(){
+  if(busy)return; busy=true;
+  try{
+    const r=await fetch('/state');if(!r.ok)throw Error();const s=await r.json();
+    document.querySelector('#connection').textContent=`Connected · ${s.backend ?? "RTL"} · ${((s.clocks_per_second ?? 0)/1e6).toFixed(1)} MHz · ${(s.generated_fps ?? 0).toFixed(1)} generated FPS · ${displayedFPS.toFixed(1)} displayed FPS · frame ${s.frame}`;
+    document.querySelector('#message').textContent=s.message;
+    document.querySelector('#details').textContent=s.details ?? '';
+    if(s.reset!==lastReset){lastReset=s.reset;shown=-1;ctx.clearRect(0,0,640,480);}
+    waiting.style.display=s.has_frame?'none':'grid';waiting.textContent=s.message;
+
+  }catch{document.querySelector('#connection').textContent='Simulation disconnected · run make play-vga to reconnect';}
+  finally{busy=false;}
+}
+async function draw(now){
+  requestAnimationFrame(draw);
+  if(frameBusy || now-lastFetch < 1000/30) return;
+  frameBusy=true; lastFetch+=Math.floor((now-lastFetch)/(1000/30))*(1000/30);
+  try{
+    const response=await fetch(`/frame.rgba?after=${shown}`);
+    if(response.status===200){
+      const number=Number(response.headers.get('X-Frame-Number'));
+      const data=new Uint8ClampedArray(await response.arrayBuffer());
+      if(data.length===640*480*4){ctx.putImageData(new ImageData(data,640,480),0,0);shown=number;displayed++;}
+    }
+    const end=performance.now();
+    if(end-fpsStart>=1000){displayedFPS=displayed*1000/(end-fpsStart);displayed=0;fpsStart=end;}
+  }catch{}finally{frameBusy=false;}
+}
+requestAnimationFrame(draw);
+setInterval(poll,200);poll();
+</script>
+</html>

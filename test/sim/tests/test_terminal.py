@@ -2,8 +2,8 @@
 
 import cocotb
 
-from poker_sim import PokerSim
-from poker_terminal import PokerTerminal, GameScreen
+from sim.poker_sim import PokerSim
+from sim.poker_controls import PokerTerminal, GameScreen
 from test_core import PAYOUTS, reference
 
 

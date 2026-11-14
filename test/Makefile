@@ -45,15 +45,23 @@ TOPLEVEL = tb
 # List test modules to run, separated by commas and without the .py suffix:
 COCOTB_TEST_MODULES = test
 
-# include cocotb's make rules to take care of the simulator setup
+# Cocotb provides the default chip test target and gate-level simulation rules.
 include $(shell cocotb-config --makefiles)/Makefile.sim
 
-.PHONY: demo play play-lines
-demo:
-	$(MAKE) sim COCOTB_TEST_MODULES=poker_demo COCOTB_TEST_FILTER= COCOTB_TESTCASE=
-
+.PHONY: play play-vga capture-vga test-sim
 play:
-	$(MAKE) sim COCOTB_TEST_MODULES=poker_terminal COCOTB_TEST_FILTER= COCOTB_TESTCASE=
+	$(MAKE) sim COCOTB_TEST_MODULES=sim.poker_terminal COCOTB_TEST_FILTER= COCOTB_TESTCASE=
 
-play-lines:
-	POKER_LINE_MODE=1 $(MAKE) play
+# VGA playback and capture use the native Verilator model without waveforms.
+play-vga:
+	python3 -m sim.native_vga
+
+capture-vga:
+	VGA_HEADLESS=1 $(MAKE) play-vga
+
+test-sim:
+	python3 -m pytest -q sim/tests/test_vga_tools.py sim/tests/test_native.py
+	$(MAKE) sim COCOTB_TEST_MODULES=sim.tests.test_native_equivalence,sim.tests.test_terminal COCOTB_TEST_FILTER= COCOTB_TESTCASE= COCOTB_PLUSARGS="$(COCOTB_PLUSARGS) +NO_WAVES"
+	@! grep '<failure' results.xml
+	@mkdir -p output
+	cp results.xml output/sim-results.xml

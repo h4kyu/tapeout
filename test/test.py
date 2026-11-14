@@ -8,8 +8,6 @@ from cocotb.triggers import ClockCycles, Timer
 from test_debounce import test_debounce
 from test_prng import test_prng
 from test_inputs import test_player_inputs
-from poker_demo import scripted_ascii_demo
-from test_terminal import terminal_commands, game_screen_and_button_profiles
 from test_core import (
     basic_deal_draw_round,
     hold_switches_do_not_trigger_deal_or_draw,
@@ -22,7 +20,20 @@ from test_core import (
 
 @cocotb.test()
 async def test_project(dut):
-    """The inactive VGA stub and bidirectional outputs stay zero across reset."""
+    """Check defined outputs and VGA pin packing with either stub or renderer."""
+    def check_outputs():
+        assert dut.uo_out.value.is_resolvable
+        assert int(dut.uio_out.value) == 0
+        assert int(dut.uio_oe.value) == 0
+        if not int(dut.GATE_LEVEL.value):
+            vga = dut.user_project.game_vga_renderer
+            r, g, b = (int(channel.value) for channel in (vga.red, vga.green, vga.blue))
+            expected = (int(vga.hsync.value) << 7 | (b & 1) << 6
+                        | (g & 1) << 5 | (r & 1) << 4
+                        | int(vga.vsync.value) << 3 | (b >> 1) << 2
+                        | (g >> 1) << 1 | r >> 1)
+            assert int(dut.uo_out.value) == expected
+
     clock = Clock(dut.clk, 40, unit="ns")
     cocotb.start_soon(clock.start())
     dut.ena.value = 1
@@ -31,13 +42,11 @@ async def test_project(dut):
     dut.rst_n.value = 0
     await ClockCycles(dut.clk, 10)
     await Timer(1, unit="ns")
-    assert int(dut.uo_out.value) == 0x00
-    assert int(dut.uio_out.value) == 0
-    assert int(dut.uio_oe.value) == 0
+    check_outputs()
     dut.rst_n.value = 1
     await ClockCycles(dut.clk, 10)
     await Timer(1, unit="ns")
-    assert int(dut.uo_out.value) == 0x00
+    check_outputs()
 
 
 @cocotb.test()
