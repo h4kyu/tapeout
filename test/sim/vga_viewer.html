@@ -24,11 +24,11 @@
   <aside>
     <div id="connection">Connecting…</div>
     <div id="message"></div><pre id="details"></pre>
-    <button data-key=" ">Space · Deal / Draw</button><button data-key="r">R · Reset</button>
+    <button id="deal" aria-pressed="false">Hold Space · Deal / Draw</button><button id="reset" aria-pressed="false">Hold R · Reset</button>
     <div><button data-key="1" aria-pressed="false">1 OFF</button><button data-key="2" aria-pressed="false">2 OFF</button><button data-key="3" aria-pressed="false">3 OFF</button><button data-key="4" aria-pressed="false">4 OFF</button><button data-key="5" aria-pressed="false">5 OFF</button> Hold switches</div>
-    <div><button data-key="b">B · Button profile</button><button data-key="q">Q · Stop</button></div>
+    <div><button id="stop">Q · Stop</button></div>
     <p><a href="/frame.png" target="_blank" rel="noopener">Open latest PNG</a></p>
-    <p class="muted">Keyboard: Space, 1–5, R, B, Q. Switches stay set across deals and resets. HOLD labels show the core’s held cards. Controls and game state use PokerSim; the VGA image is captured independently.</p>
+    <p class="muted">Hold Space for Deal/Draw; release to let go. Hold R to assert reset. Keys 1–5 toggle switches anytime. Q stops the viewer. Switches and seed stay set across reset. The RTL decides whether button presses affect gameplay.</p>
   </aside>
 </div>
 <script>
@@ -36,16 +36,56 @@ const canvas=document.querySelector('#screen'), ctx=canvas.getContext('2d');
 const waiting=document.querySelector('#waiting');
 let shown=-1, lastReset=-1, busy=false, frameBusy=false, lastFetch=0;
 let displayed=0, displayedFPS=0, fpsStart=performance.now();
-async function key(key) {
-  try { const r=await fetch('/key',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({key})});
-    if(!r.ok) document.querySelector('#connection').textContent=await r.text();
-  } catch { document.querySelector('#connection').textContent='Simulation disconnected'; }
+// Serialize delivery so a quick button release cannot overtake its press.
+let inputQueue=Promise.resolve();
+function sendInput(event){
+  inputQueue=inputQueue.catch(()=>{}).then(async()=>{
+    const response=await fetch('/input',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(event)});
+    if(!response.ok) throw Error(await response.text());
+  }).catch(error=>{document.querySelector('#connection').textContent=`Input error: ${error.message}`;});
+  return inputQueue;
 }
-document.querySelectorAll('[data-key]').forEach(b=>b.addEventListener('click',()=>key(b.dataset.key)));
-document.addEventListener('keydown',e=>{
-  if(e.repeat || e.ctrlKey || e.metaKey || e.altKey) return;
-  const k=e.key.toLowerCase(); if([' ','1','2','3','4','5','r','b','q'].includes(k)){e.preventDefault();key(k);}
+const sources={deal:new Set(),reset:new Set()};
+function buttonLevel(control,source,pressed){
+  const wasDown=sources[control].size>0;
+  if(pressed)sources[control].add(source);else sources[control].delete(source);
+  const down=sources[control].size>0;
+  if(down!==wasDown)sendInput({control,pressed:down});
+}
+for(const control of ['deal','reset']){
+  const button=document.querySelector(`#${control}`);
+  button.addEventListener('pointerdown',event=>{
+    event.preventDefault();button.setPointerCapture(event.pointerId);
+    buttonLevel(control,`pointer:${event.pointerId}`,true);
+  });
+  for(const kind of ['pointerup','pointercancel','lostpointercapture'])
+    button.addEventListener(kind,event=>buttonLevel(control,`pointer:${event.pointerId}`,false));
+}
+document.querySelectorAll('[data-key]').forEach(button=>button.addEventListener('click',()=>
+  sendInput({control:'hold',index:Number(button.dataset.key)})));
+document.querySelector('#stop').addEventListener('click',()=>sendInput({control:'quit'}));
+document.addEventListener('keydown',event=>{
+  if(event.repeat || event.ctrlKey || event.metaKey || event.altKey)return;
+  const key=event.key.toLowerCase();
+  if(key===' ' || key==='r'){
+    event.preventDefault();buttonLevel(key===' '?'deal':'reset','keyboard',true);
+  }else if('12345'.includes(key) && key.length===1){
+    event.preventDefault();sendInput({control:'hold',index:Number(key)});
+  }else if(key==='q')sendInput({control:'quit'});
 });
+document.addEventListener('keyup',event=>{
+  const key=event.key.toLowerCase();
+  if(key===' ' || key==='r'){
+    event.preventDefault();buttonLevel(key===' '?'deal':'reset','keyboard',false);
+  }
+});
+function releaseButtons(){
+  for(const control of ['deal','reset']){
+    if(sources[control].size){sources[control].clear();sendInput({control,pressed:false});}
+  }
+}
+window.addEventListener('blur',releaseButtons);
+document.addEventListener('visibilitychange',()=>{if(document.hidden)releaseButtons();});
 async function poll(){
   if(busy)return; busy=true;
   try{
@@ -62,6 +102,8 @@ async function poll(){
         button.textContent=`${position} ${on?'ON':'OFF'}`;
       }
     });
+    document.querySelector('#deal').setAttribute('aria-pressed',String(Boolean(s.deal_pressed)));
+    document.querySelector('#reset').setAttribute('aria-pressed',String(Boolean(s.reset_active)));
     if(s.reset!==lastReset){lastReset=s.reset;shown=-1;ctx.clearRect(0,0,640,480);}
     waiting.style.display=s.has_frame?'none':'grid';waiting.textContent=s.message;
 

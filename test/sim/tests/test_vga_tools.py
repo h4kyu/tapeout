@@ -104,15 +104,15 @@ def test_viewer_transport_and_command_validation():
         state.publish({"frame": 1, "message": "ready"}, png=b"png")
         assert json.load(urllib.request.urlopen(url + "/state"))["frame"] == 1
         assert urllib.request.urlopen(url + "/frame.png").read() == b"png"
-        request = urllib.request.Request(url + "/key", data=b'{"key":"1"}', method="POST")
+        request = urllib.request.Request(url + "/input", data=b'{"control":"hold","index":1}', method="POST")
         assert urllib.request.urlopen(request).status == 202
-        assert state.keys.get_nowait() == "1"
-        request = urllib.request.Request(url + "/key", data=b'{"key":"shell"}', method="POST")
+        assert state.inputs.get_nowait() == {"control": "hold", "index": 1}
+        request = urllib.request.Request(url + "/input", data=b'{"control":"shell"}', method="POST")
         with pytest.raises(urllib.error.HTTPError) as error:
             urllib.request.urlopen(request)
         assert error.value.code == 400
         with pytest.raises(Empty):
-            state.keys.get_nowait()
+            state.inputs.get_nowait()
     finally:
         server.shutdown()
         server.server_close()
@@ -140,3 +140,90 @@ def test_raw_frames_png_download_and_occupied_port():
     finally:
         server.shutdown()
         server.server_close()
+
+
+def test_physical_input_validation_and_no_game_state_policy():
+    from sim.board_controls import BoardControls, validate_input
+
+    class Pins:
+        holds = 0
+        deal_pressed = False
+        reset_active = False
+        def set_switches(self, mask): self.holds = mask
+        def set_deal_level(self, pressed): self.deal_pressed = pressed
+        def set_reset_level(self, pressed): self.reset_active = pressed
+        def snapshot(self): raise AssertionError("Live input handling must not read game state")
+
+    sim = Pins()
+    board = BoardControls(sim)
+    board.apply({"control": "deal", "pressed": True})
+    board.apply({"control": "hold", "index": 2})
+    assert sim.deal_pressed and sim.holds == 2
+    board.apply({"control": "reset", "pressed": True})
+    assert sim.reset_active and sim.deal_pressed and sim.holds == 2
+    board.apply({"control": "deal", "pressed": False})
+    assert not sim.deal_pressed
+    assert not board.apply({"control": "quit"})
+    for event in (None, {}, {"control":"hold","index":True},
+                  {"control":"hold","index":6}, {"control":"deal","pressed":1},
+                  {"control":"reset","pressed":False,"seed":42}, {"control":"profile"}):
+        with pytest.raises(ValueError):
+            validate_input(event)
+
+
+def test_terminal_keeps_clocking_between_manual_level_changes():
+    import asyncio
+    import io
+    import os
+    import pty
+    import termios
+    from sim.board_controls import run_terminal
+
+    class Sim:
+        holds = 0
+        deal_pressed = False
+        reset_active = False
+        seed = 53
+        cycles = 0
+        accepted_presses = 0
+        debounce_cycles = 5
+        def set_switches(self, mask): self.holds = mask
+        def set_deal_level(self, pressed): self.deal_pressed = pressed
+        def set_reset_level(self, pressed): self.reset_active = pressed
+        def snapshot(self): return self
+        def ascii(self): return "Read-only diagnostics"
+        async def advance(self, cycles):
+            self.cycles += cycles
+            await asyncio.sleep(0)
+
+    async def exercise():
+        sim = Sim()
+        master, slave = pty.openpty()
+        previous = termios.tcgetattr(slave)
+        async def wait_for(predicate):
+            while not predicate():
+                await asyncio.sleep(0)
+        async def controls():
+            await wait_for(lambda: sim.cycles >= 8000)
+            os.write(master, b" ")
+            await wait_for(lambda: sim.deal_pressed)
+            before = sim.cycles
+            await wait_for(lambda: sim.cycles >= before + 8000)
+            assert sim.deal_pressed, "No automatic release waveform"
+            os.write(master, b"1r")
+            await wait_for(lambda: sim.holds == 1 and sim.reset_active)
+            assert sim.seed == 53 and sim.deal_pressed
+            os.write(master, b"r ")
+            await wait_for(lambda: not sim.reset_active and not sim.deal_pressed)
+            os.write(master, b"q")
+        try:
+            with os.fdopen(os.dup(slave), "r") as keyboard:
+                await asyncio.wait_for(asyncio.gather(
+                    run_terminal(sim, keyboard, io.StringIO()), controls()), timeout=3)
+            assert sim.cycles >= 16000 and sim.holds == 1
+            assert termios.tcgetattr(slave) == previous
+        finally:
+            os.close(master)
+            os.close(slave)
+
+    asyncio.run(exercise())

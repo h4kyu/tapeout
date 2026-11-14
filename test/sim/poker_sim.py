@@ -133,6 +133,9 @@ class PokerSim:
     def __init__(self, dut=None, batch_clocks=False, *, driver=None):
         self.driver = driver if driver is not None else CocotbDriver(dut, batch_clocks)
         self.holds = 0
+        self.deal_pressed = False
+        self.reset_active = True
+        self.seed = 42
         self.debounce_cycles = self.driver.debounce_cycles
         self.cycle_observers = self.driver.cycle_observers
         # Preserve existing callers inspecting the Cocotb model.
@@ -179,25 +182,51 @@ class PokerSim:
     def snapshot(self):
         return self.driver.snapshot()
 
+    def _drive_switches_and_button(self):
+        self.driver.write(ui_in=self.holds | (32 if self.deal_pressed else 0))
+
+    def set_switches(self, mask):
+        """Drive physical switch pins without advancing clocks or reading state."""
+        if type(mask) is not int or not 0 <= mask < 32:
+            raise ValueError("Switch mask must be between 0 and 31")
+        self.holds = mask
+        self._drive_switches_and_button()
+
+    def set_deal_level(self, pressed):
+        """Drive the physical Deal/Draw level; the RTL decides its effect."""
+        if type(pressed) is not bool:
+            raise ValueError("Button level must be a boolean")
+        self.deal_pressed = pressed
+        self._drive_switches_and_button()
+
+    def set_reset_level(self, pressed):
+        """Drive reset without changing the seed, switches, or button level."""
+        if type(pressed) is not bool:
+            raise ValueError("Reset level must be a boolean")
+        self.reset_active = pressed
+        self.driver.write(rst_n=int(not pressed))
+
     async def reset(self, seed=42, *, preserve_switches=False):
-        """Reset RTL; interactive resets can retain physical hold positions."""
+        """Initialize a scripted session; live reset uses set_reset_level()."""
         if not 0 <= seed <= 255:
             raise ValueError("Seed must be between 0 and 255")
         if not preserve_switches:
             self.holds = 0
+        self.seed = seed
+        self.deal_pressed = False
+        self.reset_active = True
         self.cycles = 0
         self.accepted_presses = 0
         self.driver.write(clk=0, ena=1, ui_in=self.holds, uio_in=seed, rst_n=0)
         await self.advance(3)
-        self.driver.write(rst_n=1)
+        self.set_reset_level(False)
         await self.advance(3)
         return self.snapshot()
 
     async def set_holds(self, *positions):
         if any(i not in range(1, 6) for i in positions):
             raise ValueError("Hold positions must be between 1 and 5")
-        self.holds = sum(1 << (i - 1) for i in set(positions))
-        self.driver.write(ui_in=self.holds)
+        self.set_switches(sum(1 << (i - 1) for i in set(positions)))
         # Two synchronization edges plus one for the HOLD-state register.
         await self.advance(3)
         return self.snapshot()
@@ -208,7 +237,7 @@ class PokerSim:
         interval = self.debounce_cycles + 4
 
         async def level(pressed, cycles):
-            self.driver.write(ui_in=self.holds | (32 if pressed else 0))
+            self.set_deal_level(pressed)
             await self.advance(cycles)
 
         if profile == "bounce":

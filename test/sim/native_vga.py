@@ -8,7 +8,8 @@ from queue import Empty
 import time
 
 from sim.poker_sim import PokerSim
-from sim.poker_controls import GameScreen, PokerTerminal
+from sim.poker_controls import PokerTerminal
+from sim.board_controls import BoardControls
 from sim.vga_capture import Frame, FRAME_CLOCKS
 from sim.vga_viewer import ViewerState, start_server
 
@@ -29,7 +30,8 @@ def status(driver):
 
 
 async def run():
-    debounce = int(os.environ.get('VGA_DEBOUNCE_CYCLES', '5'))
+    default_debounce = '5' if os.environ.get('VGA_HEADLESS') == '1' else '500000'
+    debounce = int(os.environ.get('VGA_DEBOUNCE_CYCLES', default_debounce))
     sim = PokerSim.native(debounce)
     server = None
     try:
@@ -59,8 +61,8 @@ async def run():
         viewer = ViewerState()
         server = start_server(viewer, int(os.environ.get('VGA_PORT', '8765')))
         print(f'VGA viewer: http://localhost:{server.server_port} (Verilator, uncapped)\n'
-              'Space Deal/Draw | 1-5 Holds | R Reset | B Profile | Q Stop', flush=True)
-        screen = GameScreen(sim)
+              'Hold Space or the button for Deal/Draw | 1-5 Switches | Hold R for Reset | Q Stop', flush=True)
+        board = BoardControls(sim)
         reset = 0
         next_publish = 0
         rate_start = time.monotonic(); rate_cycles = sim.cycles
@@ -69,16 +71,17 @@ async def run():
         while True:
             for _ in range(16):
                 try:
-                    key = viewer.keys.get_nowait()
+                    event = viewer.inputs.get_nowait()
                 except Empty:
                     break
-                if not await screen.key(key):
+                was_reset = sim.reset_active
+                if not board.apply(event):
                     return
-                if key == 'r':
+                await sim.advance(1)
+                if sim.reset_active and not was_reset:
                     reset += 1
                     viewer.publish({}, clear=True)
-                    rate_start = time.monotonic(); rate_cycles = sim.cycles
-                    rate_frames = sim.driver.metrics().frames
+                    next_publish = 0
             await sim.advance(16384)
             await asyncio.sleep(0)  # Deliver cancellation/interrupts between bounded batches.
             now = time.monotonic()
@@ -97,7 +100,10 @@ async def run():
                 viewer.publish({'frame': s.frames, 'reset': reset, 'cycles': sim.cycles,
                                 'message': message, 'has_frame': bool(s.ready),
                                 'switch_mask': sim.holds, 'held_cards': sim.snapshot().holds,
-                                'details': screen.render().replace('Simulation pauses between keys.', 'Simulation runs uncapped.'),
+                                'details': board.render(),
+                                'deal_pressed': sim.deal_pressed, 'reset_active': sim.reset_active,
+                                'seed': sim.seed, 'state': sim.snapshot().state,
+                                'balance': sim.snapshot().balance, 'accepted_presses': sim.accepted_presses,
                                 'backend': 'Verilator', 'clocks_per_second': clocks_per_second,
                                 'generated_fps': generated_fps, 'sync_errors': s.errors})
                 next_publish = now + 0.2

@@ -4,6 +4,7 @@ import json
 import errno
 from urllib.parse import urlparse, parse_qs
 from sim.vga_capture import png_bytes
+from sim.board_controls import validate_input
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 from pathlib import Path
 from queue import Queue, Full
@@ -12,7 +13,7 @@ from threading import Lock, Thread
 
 class ViewerState:
     def __init__(self):
-        self.keys = Queue(maxsize=64)
+        self.inputs = Queue(maxsize=64)
         self.lock = Lock()
         self.png = None
         self.rgba = None
@@ -92,7 +93,7 @@ def start_server(state, port=8765):
                 self.reply(404, "text/plain", b"Not found")
 
         def do_POST(self):
-            if self.path != "/key":
+            if self.path != "/input":
                 self.reply(404, "text/plain", b"Not found")
                 return
             # No arbitrary commands, file paths, or RTL access from the browser.
@@ -100,10 +101,8 @@ def start_server(state, port=8765):
                 length = int(self.headers.get("Content-Length", "0"))
                 if not 0 < length <= 64:
                     raise ValueError("Invalid input size")
-                key = json.loads(self.rfile.read(length)).get("key")
-                if key not in (" ", "1", "2", "3", "4", "5", "b", "r", "q"):
-                    raise ValueError("Unknown key")
-                state.keys.put_nowait(key)
+                event = validate_input(json.loads(self.rfile.read(length)))
+                state.inputs.put_nowait(event)
             except (ValueError, TypeError, AttributeError, Full):
                 self.reply(400, "text/plain", b"Invalid command or input queue full")
                 return

@@ -192,3 +192,62 @@ async def physical_hold_switches(dut):
                 assert records == reference_run
         finally:
             sim.close()
+
+
+@cocotb.test()
+async def raw_board_controls(dut):
+    """Live controls drive levels without advancing clocks or consulting state."""
+    from sim.board_controls import BoardControls
+    if int(dut.GATE_LEVEL.value):
+        return
+    reference = None
+    for native in (False, True):
+        sim = PokerSim.native() if native else PokerSim(dut)
+        board = BoardControls(sim)
+        records = []
+        def apply(event):
+            cycles = sim.cycles
+            assert board.apply(event)
+            assert sim.cycles == cycles, "Live controls must not clock scripted actions"
+        def record():
+            records.append((sim.snapshot(), sim.holds, sim.deal_pressed,
+                            sim.reset_active, sim.seed, sim.cycles, sim.accepted_presses))
+        try:
+            await sim.reset(53)
+            apply({"control":"hold","index":1})
+            apply({"control":"deal","pressed":True})
+            await sim.advance(100)
+            assert sim.snapshot().state == 2 and sim.snapshot().holds == 1
+            assert sim.accepted_presses == 1 and sim.deal_pressed
+            apply({"control":"hold","index":3})
+            await sim.advance(3)
+            assert sim.snapshot().holds == 5 and sim.deal_pressed
+            assert sim.accepted_presses == 1
+            record()
+            apply({"control":"deal","pressed":False})
+            await sim.advance(20)
+            apply({"control":"deal","pressed":True})
+            await sim.advance(100)
+            assert sim.snapshot().state == 5 and sim.snapshot().holds == 5
+            assert sim.accepted_presses == 2
+            apply({"control":"hold","index":1})
+            await sim.advance(3)
+            assert sim.holds == 4 and sim.snapshot().holds == 5
+            record()
+            apply({"control":"reset","pressed":True})
+            await sim.advance(3)
+            assert sim.snapshot().state == 0 and sim.snapshot().balance == 100
+            assert sim.holds == 4 and sim.seed == 53 and sim.deal_pressed
+            assert sim.accepted_presses == 2  # Live reset does not reset diagnostics.
+            record()
+            apply({"control":"reset","pressed":False})
+            await sim.advance(100)  # Button left held through reset: RTL sees it.
+            assert sim.snapshot().state == 2 and sim.snapshot().holds == 4
+            assert sim.accepted_presses == 3
+            record()
+            if reference is None:
+                reference = records
+            else:
+                assert records == reference
+        finally:
+            sim.close()

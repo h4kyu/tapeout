@@ -1,6 +1,5 @@
-"""Interactive terminal controls for the RTL poker simulator."""
+"""Scripted game operations for tests, line commands, and headless setup."""
 
-import os
 from collections import deque
 
 from sim.poker_sim import PokerSim, STATES, CATEGORIES
@@ -98,7 +97,7 @@ class PokerTerminal:
 
 
 class GameScreen:
-    """Small, single-key game view; all actions still use external RTL inputs."""
+    """Scripted key scenarios for tests. Live frontends use BoardControls."""
 
     PROFILES = ("clean", "bounce", "short", "long")
 
@@ -186,30 +185,3 @@ class GameScreen:
                 count = self.sim.accepted_presses - before
                 self.messages.append(f"{profile.upper()}: {count} accepted press; {'draw' if state.state == 2 else 'deal'} complete.")
         return True
-
-    async def run(self, keyboard, display):
-        # Use the controlling terminal, not simulator-wrapped Python stdio.
-        import termios
-        import tty
-
-        fd = keyboard.fileno()
-        previous = termios.tcgetattr(fd)
-        try:
-            tty.setcbreak(fd)
-            # Deliver Ctrl-C as a key instead of signaling the simulator/make tree.
-            settings = termios.tcgetattr(fd)
-            settings[3] &= ~termios.ISIG
-            termios.tcsetattr(fd, termios.TCSANOW, settings)
-            display.write("\x1b[?1049h\x1b[?25l")
-            while True:
-                display.write("\x1b[H\x1b[2J" + self.render())
-                display.flush()
-                key = os.read(fd, 1).decode("utf-8", errors="ignore")
-                if not key or not await self.key(key):
-                    break
-        except KeyboardInterrupt:
-            pass
-        finally:
-            termios.tcsetattr(fd, termios.TCSADRAIN, previous)
-            display.write("\x1b[?25h\x1b[?1049l")
-            display.flush()
