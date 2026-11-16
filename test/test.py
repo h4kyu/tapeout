@@ -18,6 +18,7 @@ from test_core import (
     used_card_mask_all_codes,
     balance_arithmetic_boundaries,
     all_hold_masks_and_random_rounds,
+    ten_card_round_rejection_and_reuse,
     bankruptcy_overflow_and_reset,
 )
 
