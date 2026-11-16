@@ -29,7 +29,10 @@ module poker_core (
     wire dealer_done;
     wire [3:0] category;
     wire [11:0] payout;
-    wire [16:0] credited_balance = {1'b0, balance} + {5'b0, payout};
+    // Share one adder between payout crediting and the five-credit wager.
+    // 16'hfffb is -5 modulo 2^16; ignore its carry on wager subtraction.
+    wire [15:0] balance_delta = (state == EVALUATE) ? {4'b0, payout} : 16'hfffb;
+    wire [16:0] updated_balance = {1'b0, balance} + {1'b0, balance_delta};
     assign can_deal = (state == IDLE || state == RESULT) && balance >= 16'd5;
     wire start_deal = deal_draw_pulse && can_deal;
     wire start_draw = deal_draw_pulse && state == HOLD;
@@ -54,7 +57,7 @@ module poker_core (
         end else begin
             case (state)
                 IDLE, RESULT: if (start_deal) begin
-                    balance <= balance - 16'd5;
+                    balance <= updated_balance[15:0];
                     held_cards <= 5'b0;
                     result_category <= 4'b0;
                     result_payout <= 12'b0;
@@ -69,7 +72,7 @@ module poker_core (
                 EVALUATE: begin
                     result_category <= category;
                     result_payout <= payout;
-                    balance <= credited_balance[16] ? 16'hffff : credited_balance[15:0];
+                    balance <= updated_balance[16] ? 16'hffff : updated_balance[15:0];
                     state <= RESULT;
                 end
                 default: state <= IDLE;
