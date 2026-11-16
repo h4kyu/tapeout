@@ -21,6 +21,7 @@
   - Store up to 10 used cards and compare candidates against that list.
   - An alternative to either mask design, not an extra optimization to stack on top.
   - Needs up to 60 card-storage bits, a count, and comparisons; could be larger.
+  - Current experiment: implemented against a 68.086% utilization baseline; post-change utilization awaits the GDS flow.
 
 - **Shared rank comparisons — `poker_evaluator.v`**
   - Express the 10 unique card-pair comparisons once and reuse their results.

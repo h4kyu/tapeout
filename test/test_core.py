@@ -291,6 +291,42 @@ async def all_hold_masks_and_random_rounds(dut):
 
 
 @cocotb.test()
+async def ten_card_round_rejection_and_reuse(dut):
+    """Reject every earlier card while filling a round, then reuse them next round."""
+    dut = dut.core_unit
+    await reset(dut)
+    initial = [2, 0x12, 0x22, 0x32, 14]
+    replacements = [0x1E, 0x2E, 0x3E, 13, 0x1D]
+    await deal(dut, initial)
+    await press_deal_draw(dut, 0)
+    consumed = initial[:]
+    expected = initial[:]
+    for slot, replacement in enumerate(replacements):
+        # Exercise every occupied entry, including replacements and discards.
+        for duplicate in consumed:
+            await offer(dut, duplicate)
+            assert hand(dut) == expected
+            assert int(dut.dealt_mask.value) == used(consumed)
+        await offer(dut, replacement)
+        consumed.append(replacement)
+        expected[slot] = replacement
+        assert hand(dut) == expected
+        assert int(dut.dealt_mask.value) == used(consumed)
+    await wait_state(dut, 5)
+    assert len(consumed) == 10
+
+    # A fresh deal must ignore every stale entry from the full previous round.
+    await deal(dut, replacements)
+    assert int(dut.dealt_mask.value) == used(replacements)
+    await press_deal_draw(dut, 0)
+    for card in initial:
+        await offer(dut, card)
+    await wait_state(dut, 5)
+    assert hand(dut) == initial
+    assert int(dut.dealt_mask.value) == used(consumed)
+
+
+@cocotb.test()
 async def bankruptcy_overflow_and_reset(dut):
     dut = dut.core_unit
     await reset(dut)
