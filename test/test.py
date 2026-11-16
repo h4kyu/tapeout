@@ -16,6 +16,7 @@ from test_core import (
     evaluator_categories_and_reference,
     rejection_holds_and_accounting,
     all_hold_masks_and_random_rounds,
+    balance_arithmetic_boundaries,
     bankruptcy_overflow_and_reset,
 )
 

@@ -291,6 +291,42 @@ async def all_hold_masks_and_random_rounds(dut):
 
 
 @cocotb.test()
+async def balance_arithmetic_boundaries(dut):
+    """Check wager eligibility and payout carry at the 16-bit boundaries."""
+    dut = dut.core_unit
+    for starting_balance in [0, 1, 2, 3, 4, 5, 6, 65535]:
+        await reset(dut)
+        # Seed the register directly to exercise boundaries without long games.
+        dut.balance.value = starting_balance
+        await Timer(1, unit="ns")
+        assert int(dut.can_deal.value) == (starting_balance >= 5)
+        await press_deal_draw(dut)
+        assert int(dut.state.value) == (1 if starting_balance >= 5 else 0)
+        assert int(dut.balance.value) == (
+            starting_balance - 5 if starting_balance >= 5 else starting_balance
+        )
+
+    hands = [
+        ([2, 0x15, 0x29, 0x3B, 13], 0),
+        ([11, 0x1B, 0x22, 0x35, 9], 5),
+        ([10, 11, 12, 13, 14], 4000),
+    ]
+    for cards, payout in hands:
+        for starting_balance in sorted({0, 65534 - payout, 65535 - payout, 65535}):
+            await reset(dut)
+            await deal(dut, cards)
+            dut.balance.value = starting_balance
+            await Timer(1, unit="ns")
+            await press_deal_draw(dut, 31)
+            await wait_state(dut, 5)
+            expected = min(65535, starting_balance + payout)
+            assert int(dut.result_payout.value) == payout
+            assert int(dut.balance.value) == expected
+            await tick(dut, 2)
+            assert int(dut.balance.value) == expected
+
+
+@cocotb.test()
 async def bankruptcy_overflow_and_reset(dut):
     dut = dut.core_unit
     await reset(dut)
