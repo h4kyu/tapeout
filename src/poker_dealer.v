@@ -49,7 +49,14 @@ module poker_dealer (
                         done <= 1'b1;
                     end else slot <= slot + 3'd1;
                 end else if (prng_ready && valid_rank && !dealt_mask[card_index]) begin
-                    cards[slot * 6 +: 6] <= candidate;
+                    case (slot)
+                        3'd0: cards[5:0] <= candidate;
+                        3'd1: cards[11:6] <= candidate;
+                        3'd2: cards[17:12] <= candidate;
+                        3'd3: cards[23:18] <= candidate;
+                        3'd4: cards[29:24] <= candidate;
+                        default: ;
+                    endcase
                     dealt_mask[card_index] <= 1'b1;
                     if (slot == 3'd4) begin
                         busy <= 1'b0;
