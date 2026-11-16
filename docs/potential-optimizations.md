@@ -12,10 +12,52 @@ Results reported by GitHub Actions on 2026-11-16, before VGA integration:
 | --- | --- | --- | --- | --- |
 | Baseline | `989fd40` | 68.086% | 66,630 | [Baseline run](https://github.com/h4kyu/tapeout/actions/runs/43896181617) |
 | Fixed card-slot writes | `fab934a` | 64.121% | 53,934 | [Fixed-slot run](https://github.com/h4kyu/tapeout/actions/runs/43902056794) |
+| Directly indexed 64-bit used-card mask | `08788d4` | 68.870% | 67,612 | [Direct-mask run](https://github.com/h4kyu/tapeout/actions/runs/43904844459) |
 
 - Fixed card-slot writes reduced utilization by 3.965 percentage points (5.82% relative) and wire length by 12,696 um (19.05%).
-- All 14 local RTL tests passed; GDS, precheck, gate-level test, and viewer jobs passed in the reported run.
-- Keep fixed card-slot writes for the next sequential experiment: the directly indexed used-card mask. Its comparison baseline is 64.121% utilization and 53,934 um wire length.
+- For fixed card-slot writes, all 14 local RTL tests passed; GDS, precheck, gate-level test, and viewer jobs passed in the reported run.
+- The direct-mask experiment branched directly from `989fd40`; it did not include fixed card-slot writes. Compare it against 68.086%, not 64.121%.
+
+### Direct-mask observation
+
+The reported direct-mask run increased area and routing demand:
+
+| Metric | Baseline (`989fd40`) | Direct mask (`08788d4`) | Change |
+| --- | --- | --- | --- |
+| Utilization | 68.086% | 68.870% | +0.784 percentage points (+1.15% relative) |
+| Wire length (um) | 66,630 | 67,612 | +982 (+1.47%) |
+| Cells, excluding fill and tap | 1,462 | 1,477 | +15 |
+| Flip-flops | 157 | 169 | +12 |
+| Clock cells | 68 | 99 | +31 |
+
+All 15 local RTL tests passed, including coverage of all 52 valid card codes,
+all 12 invalid codes, duplicate/discard rejection, and mask clearing between
+rounds and on reset. GDS, precheck, gate-level test, and viewer jobs passed in
+the supplied run summary.
+
+The 12 extra flip-flops survived synthesis. Removing the compact-index arithmetic
+did not offset the resulting implementation cost in this run; clock-cell count
+also increased. Treat this candidate as an area regression and leave it out of
+the next experiment. Keep the added regression test available for future dealer
+changes. These results do not establish a timing improvement or regression.
+
+## Suggested next experiment
+
+Try **shared rank comparisons in `poker_evaluator.v`** on a fresh branch from
+the common baseline:
+
+```sh
+git switch -c opt/shared-rank-comparisons 989fd40
+```
+
+Express the 10 unique card-pair rank comparisons once and reuse them for
+per-card match counts and duplicate-card detection (with suit equality).
+This is a small combinational change with no additional stored state or controller
+latency. Synthesis may already share the comparisons, so savings remain uncertain.
+Run the existing evaluator category/permutation tests and 3,000-hand reference
+comparison, then the complete RTL suite and the same GDS flow. Compare against
+68.086% utilization and 66,630 um wire length. Test it independently before
+combining it with the successful fixed card-slot writes.
 
 ## Candidates
 
