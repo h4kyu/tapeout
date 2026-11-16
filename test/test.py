@@ -31,13 +31,13 @@ async def test_project(dut):
     dut.rst_n.value = 0
     await ClockCycles(dut.clk, 10)
     await Timer(1, unit="ns")
-    assert int(dut.uo_out.value) == 0x80
+    assert int(dut.uo_out.value) == 0x00
     assert int(dut.uio_out.value) == 0
     assert int(dut.uio_oe.value) == 0
     dut.rst_n.value = 1
     await ClockCycles(dut.clk, 10)
     await Timer(1, unit="ns")
-    assert int(dut.uo_out.value) == 0x80
+    assert int(dut.uo_out.value) == 0x00
 
 
 @cocotb.test()

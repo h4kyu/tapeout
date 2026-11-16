@@ -78,9 +78,11 @@ gate-level wrapper test currently checks reset status and bidirectional outputs.
 Full gate-level gameplay coverage remains to be added.
 
 Until VGA is integrated, `uo_out` carries temporary status:
-`{can_deal, state[2:0], result_category[3:0]}`. These pins are not VGA signals.
+`{1'b0, state[2:0], result_category[3:0]}`. These pins are not VGA signals.
 Cards, held flags, balance, category, payout, and state are named wires in
 `project.v` for the upcoming renderer and ASCII simulation interface.
+The simulator derives `can_deal` from state IDLE/RESULT and a balance of at least
+five credits instead of reading an unused wrapper wire.
 
 ## ASCII simulation demo
 

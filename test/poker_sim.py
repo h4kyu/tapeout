@@ -126,12 +126,14 @@ class PokerSim:
 
     def snapshot(self):
         packed = int(self.game.cards.value)
+        state = int(self.game.state.value)
+        balance = int(self.game.balance.value)
         return Snapshot(
-            state=int(self.game.state.value),
+            state=state,
             cards=tuple((packed >> (6 * i)) & 63 for i in range(5)),
             holds=int(self.game.held_cards.value),
-            balance=int(self.game.balance.value),
+            balance=balance,
             category=int(self.game.result_category.value),
             payout=int(self.game.result_payout.value),
-            can_deal=bool(int(self.game.can_deal.value)),
+            can_deal=state in (0, 5) and balance >= 5,
         )
