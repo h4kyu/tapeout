@@ -1,8 +1,21 @@
 # Potential area optimizations
 
-- Baseline reported by GitHub Actions: 66.265% placement utilization and 1,387 cells, excluding fill and tap cells, before VGA integration.
+- Earlier baseline reported by GitHub Actions: 66.265% placement utilization and 1,387 cells, excluding fill and tap cells, before VGA integration. The measured baseline for the experiments below is 68.086%.
 - These are ideas to measure, not guaranteed savings.
 - Keep gameplay, duplicate protection, payouts, balance limits, and production debounce timing unchanged.
+
+## Measured results
+
+Results reported by GitHub Actions on 2026-11-16, before VGA integration:
+
+| Experiment | Commit | Utilization | Wire length (um) | Run |
+| --- | --- | --- | --- | --- |
+| Baseline | `989fd40` | 68.086% | 66,630 | [Baseline run](https://github.com/h4kyu/tapeout/actions/runs/43896181617) |
+| Fixed card-slot writes | `fab934a` | 64.121% | 53,934 | [Fixed-slot run](https://github.com/h4kyu/tapeout/actions/runs/43902056794) |
+
+- Fixed card-slot writes reduced utilization by 3.965 percentage points (5.82% relative) and wire length by 12,696 um (19.05%).
+- All 14 local RTL tests passed; GDS, precheck, gate-level test, and viewer jobs passed in the reported run.
+- Keep fixed card-slot writes for the next sequential experiment: the directly indexed used-card mask. Its comparison baseline is 64.121% utilization and 53,934 um wire length.
 
 ## Candidates
 

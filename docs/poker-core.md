@@ -3,7 +3,7 @@
 see `proposal/SystemDiagram.excalidraw` for system diagram.
 
 implements the following modules:
-- `poker_dealer.v`: five hand registers, the 52-bit used-card mask, initial deal, and selective replacement.
+- `poker_dealer.v`: five hand registers, a directly indexed 64-bit used-card mask, initial deal, and selective replacement.
 - `poker_evaluator.v`: combinational hand classification and fixed-wager pay table.
 - `poker_core.v`: round control, wager deduction, result latching, and balance.
 
@@ -13,7 +13,10 @@ Each card is `{suit[1:0], rank[3:0]}`, with ranks 2 through 14 (ace). Rank codes
 Suit codes 0 through 3 are distinct suits.
 
 `cards[5:0]` is card 1, through `cards[29:24]` card 5.
-`hold_mask[0]` controls card 1. The mask index is row-major `13 * suit + rank - 2`.
+`hold_mask[0]` controls card 1. Internally, the used-card mask is indexed directly
+by the six-bit card code. The 12 invalid-rank positions are never set.
+The public `dealt_mask[51:0]` retains row-major `13 * suit + rank - 2` indexing
+by concatenating the 13 valid rank bits from each suit, with no index arithmetic.
 The used-card mask is cleared only on reset or the start of a new round. 
 
 Zeroed card registers before a deal are not valid cards.

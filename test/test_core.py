@@ -260,6 +260,51 @@ async def rejection_holds_and_accounting(dut):
 
 
 @cocotb.test()
+async def used_card_mask_all_codes(dut):
+    """Check all 52 compact mask bits, invalid codes, and round/draw lifetime."""
+    dut = dut.core_unit
+    await reset(dut)
+    invalid_codes = [(s << 4) | r for s in range(4) for r in (0, 1, 15)]
+    for rank in range(2, 15):
+        # Every valid code is accepted in an initial hand across these rounds.
+        initial = [(s << 4) | rank for s in range(4)]
+        initial.append(2 if rank == 14 else rank + 1)
+        replacements = [c for c in DECK if c not in initial][:5]
+        await press_deal_draw(dut)
+        await tick(dut)  # Dealer starts and clears the previous round's mask.
+        assert int(dut.dealt_mask.value) == 0
+        assert int(dut.cards.value) == 0
+
+        # A valid code without prng_ready must not be recorded.
+        dut.candidate.value = initial[0]
+        await tick(dut)
+        assert int(dut.dealt_mask.value) == 0
+        assert int(dut.cards.value) == 0
+        await offer(dut, initial[0])
+        for rejected in invalid_codes + [initial[0]]:
+            await offer(dut, rejected)
+            assert int(dut.dealt_mask.value) == used(initial[:1])
+            assert int(dut.cards.value) == pack(initial[:1])
+        for i, card in enumerate(initial[1:], 2):
+            await offer(dut, card)
+            assert int(dut.dealt_mask.value) == used(initial[:i])
+        await wait_state(dut, 2)
+        assert hand(dut) == initial
+
+        await press_deal_draw(dut)  # Replace all five; discards stay marked.
+        for rejected in initial + invalid_codes:
+            await offer(dut, rejected)
+            assert int(dut.dealt_mask.value) == used(initial)
+            assert hand(dut) == initial
+        for i, card in enumerate(replacements, 1):
+            await offer(dut, card)
+            assert int(dut.dealt_mask.value) == used(initial + replacements[:i])
+        await wait_state(dut, 5)
+        assert hand(dut) == replacements
+    await reset(dut)
+
+
+@cocotb.test()
 async def all_hold_masks_and_random_rounds(dut):
     dut = dut.core_unit
     rng = random.Random(52)
