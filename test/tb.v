@@ -98,12 +98,18 @@ module tb ();
       .can_deal(core_can_deal)
   );
 
+  reg eval_clk = 0;
+  reg eval_rst_n = 1;
+  reg eval_start = 0;
   reg [29:0] eval_cards = 0;
+  wire eval_done;
   wire [3:0] eval_category;
   wire [11:0] eval_payout;
 
   poker_evaluator evaluator_unit (
-      .cards(eval_cards), .category(eval_category), .payout(eval_payout)
+      .clk(eval_clk), .rst_n(eval_rst_n), .start(eval_start),
+      .cards(eval_cards), .done(eval_done),
+      .category(eval_category), .payout(eval_payout)
   );
 
 `ifdef GL_TEST

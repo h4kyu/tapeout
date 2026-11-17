@@ -53,7 +53,12 @@ They test the controller, dealer, and evaluator with deterministic card candidat
 without requiring a PRNG or VGA implementation. Tests include a basic complete
 round, hold switches changing independently of Deal/Draw, hand categories and
 payouts, invalid and duplicate cards, all hold masks, balance limits, and reset.
-The suite also compares 3,000 random hands with a Python reference evaluator.
+The suite also compares 3,000 random valid hands and 1,000 random raw card
+encodings with a Python reference evaluator, and permutes directed cases
+covering every category and straight window. The multicycle evaluator tests
+check its 16-clock completion latency, one-cycle done pulse, busy-start
+rejection, and asynchronous reset cancellation. Core tests verify that EVALUATE
+waits for completion, ignores busy inputs, and credits the payout exactly once.
 Results for the combined suite are written to `results.xml` by the existing CI
 test step. In gate-level simulation, these standalone units use RTL, just like
 the standalone debounce unit.

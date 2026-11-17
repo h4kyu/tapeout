@@ -26,7 +26,7 @@ module poker_core (
                EVALUATE = 3'd4, 
                RESULT = 3'd5;
 
-    wire dealer_done;
+    wire dealer_done, evaluation_done;
     wire [3:0] category;
     wire [11:0] payout;
     wire [16:0] credited_balance = {1'b0, balance} + {5'b0, payout};
@@ -42,7 +42,11 @@ module poker_core (
         .done(dealer_done), .cards(cards), .dealt_mask(dealt_mask)
     );
     
-    poker_evaluator evaluator (.cards(cards), .category(category), .payout(payout));
+    // Dealer completion leaves the final hand stable throughout evaluation.
+    poker_evaluator evaluator (
+        .clk(clk), .rst_n(rst_n), .start(state == DRAWING && dealer_done),
+        .cards(cards), .done(evaluation_done), .category(category), .payout(payout)
+    );
 
     always @(posedge clk or negedge rst_n) begin
         if (!rst_n) begin
@@ -66,7 +70,7 @@ module poker_core (
                     if (start_draw) state <= DRAWING;
                 end
                 DRAWING: if (dealer_done) state <= EVALUATE;
-                EVALUATE: begin
+                EVALUATE: if (evaluation_done) begin
                     result_category <= category;
                     result_payout <= payout;
                     balance <= credited_balance[16] ? 16'hffff : credited_balance[15:0];

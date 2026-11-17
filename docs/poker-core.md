@@ -4,7 +4,7 @@ see `proposal/SystemDiagram.excalidraw` for system diagram.
 
 implements the following modules:
 - `poker_dealer.v`: five hand registers, the 52-bit used-card mask, initial deal, and selective replacement.
-- `poker_evaluator.v`: combinational hand classification and fixed-wager pay table.
+- `poker_evaluator.v`: multicycle hand classification and fixed-wager pay table.
 - `poker_core.v`: round control, wager deduction, result latching, and balance.
 
 ## Card representation
@@ -45,7 +45,20 @@ An adapter can assert `prng_ready` continuously and advance the LFSR on `dealer_
 Pulses while busy are ignored, not queued. The final input adapter must produce one pulse per debounced press and require a debounced release before rearming, we avoid connecting `button_out` directly to `deal_draw_pulse`.
 
 The dealer samples `start`, `draw_mode` and the hold mask together when idle.
-The evaluator is combinational, so the controller's EVALUATE state supplies a full cycle for it to settle. 
+The evaluator accepts `start` on the same edge that dealer completion advances
+the core from DRAWING to EVALUATE. It scans one card per cycle for five cycles,
+then compares one unordered card pair per cycle for ten cycles, sharing the
+rank comparator and pair counter. Rank bounds and a wheel flag replace the
+parallel straight-pattern checks. A final cycle registers the category and
+asserts `done` for one clock; payout is decoded from the registered category.
+
+The evaluator requires `cards` to stay stable from the accepted start through
+completion; the core's dealer registers provide this without another hand copy.
+Starts while evaluating are ignored. Category and payout retain the previous
+result until completion, and reset clears them and cancels an active evaluation.
+`done` asserts 16 clocks after start; the core latches the result and credits the
+award on the following edge. EVALUATE therefore lasts 17 clocks (680 ns at
+25 MHz), with input pulses ignored throughout.
 
 ## Round and accounting rules
 
@@ -55,7 +68,7 @@ The evaluator is combinational, so the controller's EVALUATE state supplies a fu
 | DEALING | 1 | Dealer completion advances to HOLD |
 | HOLD | 2 | Action captures holds and starts DRAWING |
 | DRAWING | 3 | Dealer completion advances to EVALUATE |
-| EVALUATE | 4 | Latch classification, credit award once, advance to RESULT |
+| EVALUATE | 4 | Wait for evaluator completion, latch classification, credit award once, advance to RESULT |
 | RESULT | 5 | Preserve final hand/award until the next affordable deal |
 
 Reset restores 100 credits and clears all hand, deck and result state. Initial dealing ignores hold switches. Hold-all draws complete without consuming any candidate. Each new deal clears the previous result and used-card mask.
@@ -95,6 +108,10 @@ The terminal simulator derives deal availability from the exposed state and
 balance: state IDLE or RESULT, with at least five credits. It does not require a
 wrapper-level `can_deal` wire.
 
-Run `make` in `test/` with the pinned Python dependencies and Icarus Verilog installed. The shared testbench contains standalone core and evaluator instances, and `test.py` imports the core tests alongside the wrapper and debounce tests. GitHub's existing RTL test workflow runs the combined suite and reports results in `results.xml`. The core suite includes a basic deal/draw round, hold-switch independence, every hand category, 3,000 random hands, all 32 hold masks, invalid/duplicate rejection, accounting and reset.
+Run `make` in `test/` with the pinned Python dependencies and Icarus Verilog installed. The shared testbench contains standalone core and evaluator instances, and `test.py` imports the core tests alongside the wrapper and debounce tests. GitHub's existing RTL test workflow runs the combined suite and reports results in `results.xml`. The core suite includes a basic deal/draw round, hold-switch independence, every hand category, every straight window, 3,000 random valid hands, 1,000 random raw encodings, all 32 hold masks, invalid/duplicate rejection, accounting and reset. It also checks evaluator completion latency, busy-start rejection, core waiting and single crediting, and reset cancellation during evaluation.
 
-The combinational evaluator and variable-index dealer still need synthesis and timing measurement at 25 MHz, and a tile-fit check. Passing behavioral simulation alone does not establish timing closure or fit in the currently configured tile.
+The multicycle evaluator needs a fresh synthesis and timing measurement at
+25 MHz, and a tile-fit check. The reported utilization baseline for this
+experiment is 68.086%; the new utilization is pending the next GDS flow.
+Passing behavioral simulation alone does not establish timing closure or fit
+in the currently configured tile.

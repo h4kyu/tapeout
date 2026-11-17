@@ -14,6 +14,8 @@ from test_core import (
     basic_deal_draw_round,
     hold_switches_do_not_trigger_deal_or_draw,
     evaluator_categories_and_reference,
+    evaluator_handshake_and_reset,
+    core_waits_for_evaluation,
     rejection_holds_and_accounting,
     all_hold_masks_and_random_rounds,
     bankruptcy_overflow_and_reset,

@@ -1,6 +1,9 @@
 # Potential area optimizations
 
 - Baseline reported by GitHub Actions: 66.265% placement utilization and 1,387 cells, excluding fill and tap cells, before VGA integration.
+- Multicycle evaluation experiment: user-reported baseline **68.086%** at
+  commit `989fd40`; post-change utilization and timing are pending the next GDS
+  run. Tile and flow configuration are unchanged for this experiment.
 - These are ideas to measure, not guaranteed savings.
 - Keep gameplay, duplicate protection, payouts, balance limits, and production debounce timing unchanged.
 
@@ -28,9 +31,9 @@
   - Synthesis may already remove duplicate work.
 
 - **Multicycle hand evaluation — `poker_evaluator.v`, `poker_core.v`**
-  - Reuse comparison and counting hardware over several clock cycles.
-  - Could save area at the cost of extra control logic and a small evaluation delay.
-  - Requires the core to wait for evaluation completion; more involved than the other changes.
+  - Implemented: five card-scan cycles, ten pair-comparison cycles, and one result cycle reuse comparison and counting hardware.
+  - The core waits for completion and credits the result once on the next edge; EVALUATE lasts 17 clocks (680 ns at 25 MHz).
+  - RTL tests pass; area savings and timing remain to be measured against 68.086%.
 
 - **Derive displayed payout from category — `poker_core.v`**
   - Store the final category and calculate its fixed payout instead of storing another 12-bit result.
