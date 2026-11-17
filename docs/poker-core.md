@@ -3,8 +3,8 @@
 see `proposal/SystemDiagram.excalidraw` for system diagram.
 
 implements the following modules:
-- `poker_dealer.v`: five hand registers, the 52-bit used-card mask, initial deal, and selective replacement.
-- `poker_evaluator.v`: combinational hand classification and fixed-wager pay table.
+- `poker_dealer.v`: five fixed hand-slot writes, a ten-card used list, initial deal, and selective replacement.
+- `poker_evaluator.v`: combinational hand classification with shared rank comparisons and a fixed-wager pay table.
 - `poker_core.v`: round control, wager deduction, result latching, and balance.
 
 ## Card representation
@@ -13,8 +13,12 @@ Each card is `{suit[1:0], rank[3:0]}`, with ranks 2 through 14 (ace). Rank codes
 Suit codes 0 through 3 are distinct suits.
 
 `cards[5:0]` is card 1, through `cards[29:24]` card 5.
-`hold_mask[0]` controls card 1. The mask index is row-major `13 * suit + rank - 2`.
-The used-card mask is cleared only on reset or the start of a new round. 
+`hold_mask[0]` controls card 1. Up to ten six-bit entries retain every accepted
+card, including discards. Reset and a new round clear the occupied count;
+unoccupied entries are ignored and need no reset. Candidate acceptance rejects
+invalid ranks and occupied entries, and requires room in the list.
+`dealt_mask` is a combinational inspection view with row-major index
+`13 * suit + rank - 2`, not a second stored history. It is unused by the wrapper.
 
 Zeroed card registers before a deal are not valid cards.
 
@@ -58,7 +62,11 @@ The evaluator is combinational, so the controller's EVALUATE state supplies a fu
 | EVALUATE | 4 | Latch classification, credit award once, advance to RESULT |
 | RESULT | 5 | Preserve final hand/award until the next affordable deal |
 
-Reset restores 100 credits and clears all hand, deck and result state. Initial dealing ignores hold switches. Hold-all draws complete without consuming any candidate. Each new deal clears the previous result and used-card mask.
+Reset restores 100 credits and clears all hand, deck and result state. Initial dealing ignores hold switches. Hold-all draws complete without consuming any candidate. Each new deal clears the previous result and used-card history.
+
+The core stores only the final category and derives `result_payout` from it
+with a combinational fixed-award lookup, avoiding a separate 12-bit payout
+register. Balance crediting still uses the evaluator's payout in EVALUATE.
 
 The award is added after the wager has already been deducted. Balance saturates at 65,535 instead of wrapping. Below five credits, new-deal actions do nothing, reset starts a new session. Behavior can be adjusted independently of the dealer later.
 
@@ -95,6 +103,9 @@ The terminal simulator derives deal availability from the exposed state and
 balance: state IDLE or RESULT, with at least five credits. It does not require a
 wrapper-level `can_deal` wire.
 
-Run `make` in `test/` with the pinned Python dependencies and Icarus Verilog installed. The shared testbench contains standalone core and evaluator instances, and `test.py` imports the core tests alongside the wrapper and debounce tests. GitHub's existing RTL test workflow runs the combined suite and reports results in `results.xml`. The core suite includes a basic deal/draw round, hold-switch independence, every hand category, 3,000 random hands, all 32 hold masks, invalid/duplicate rejection, accounting and reset.
+Run `make` in `test/` with the pinned Python dependencies and Icarus Verilog installed. The shared testbench contains standalone core and evaluator instances, and `test.py` imports the core tests alongside the wrapper and debounce tests. GitHub's existing RTL test workflow runs the combined suite and reports results in `results.xml`. The 18-test suite includes every category and straight window, permutations, 3,000 random valid hands, 1,000 raw encoded hands, all 32 hold masks, every valid/invalid card code, ten-card rejection and reuse, balance boundaries, displayed payouts, accounting and reset.
 
-The combinational evaluator and variable-index dealer still need synthesis and timing measurement at 25 MHz, and a tile-fit check. Passing behavioral simulation alone does not establish timing closure or fit in the currently configured tile.
+See [the staged area results](combined-area-results.md) for routed measurements
+and extracted timing at 25 MHz, including remaining slow-corner setup violations.
+The gate-level job checks wrapper reset/status; standalone gameplay tests still
+use RTL in that job.
