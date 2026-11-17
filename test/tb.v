@@ -74,6 +74,37 @@ module tb ();
       .character(font_character), .row(font_row), .pixels(font_pixels)
   );
 
+  // Standalone HOLD-label geometry, with no font ROM inside the label module.
+  reg [9:0] hold_x;
+  reg [9:0] hold_y;
+  reg [4:0] hold_selected;
+  wire hold_text_active;
+  wire [5:0] hold_character;
+  wire [3:0] hold_glyph_x;
+  wire [3:0] hold_glyph_y;
+
+  hold_labels hold_unit (
+      .x(hold_x), .y(hold_y), .held_cards(hold_selected),
+      .text_active(hold_text_active), .character(hold_character),
+      .glyph_x(hold_glyph_x), .glyph_y(hold_glyph_y)
+  );
+
+  reg [9:0] card_x;
+  reg [9:0] card_y;
+  reg [29:0] card_values;
+  wire card_active;
+  wire card_text_active;
+  wire [5:0] card_character;
+  wire [3:0] card_glyph_x;
+  wire [3:0] card_glyph_y;
+  wire card_red;
+
+  card_faces card_unit (
+      .x(card_x), .y(card_y), .cards(card_values), .active(card_active),
+      .text_active(card_text_active), .character(card_character),
+      .glyph_x(card_glyph_x), .glyph_y(card_glyph_y), .red_suit(card_red)
+  );
+
   // Standalone debounce unit, independent of the project's button wiring.
   reg debounce_clk;
   reg debounce_rst_n;
