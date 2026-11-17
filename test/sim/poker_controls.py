@@ -1,22 +1,20 @@
-"""Interactive terminal controls for the RTL poker simulator."""
+"""Scripted game operations for tests, line commands, and headless setup."""
 
-import os
 from collections import deque
 
-import cocotb
-
-from poker_sim import PokerSim, STATES, CATEGORIES
+from sim.poker_sim import PokerSim, STATES, CATEGORIES
 
 
 HELP = """Commands:
   deal          Start a round (costs 5 credits)
-  hold 1 3      Select exactly these card positions to hold
-  hold none     Clear the hold selection
+  hold 1 3      Turn switches 1 and 3 ON; turn the others OFF
+  hold none     Turn all hold switches OFF
   draw          Replace unheld cards and show the result
   reset [seed]  Restore 100 credits (default seed: 42; range: 0..255)
   show          Show the current hand
   help          Show commands
   quit          Exit
+Switches can change anytime and stay set across deals and interactive resets.
 C=clubs D=diamonds H=hearts S=spades. Time pauses at the prompt."""
 
 
@@ -26,7 +24,8 @@ class PokerTerminal:
         self.output = output
 
     def show(self):
-        self.output(f"[cycle {self.sim.cycles}]\n{self.sim.snapshot().ascii()}")
+        switches = " ".join(f"{i + 1}:{'ON' if self.sim.holds & (1 << i) else 'OFF'}" for i in range(5))
+        self.output(f"[cycle {self.sim.cycles}]\nSwitches: {switches}\n{self.sim.snapshot().ascii()}")
 
     async def command(self, line):
         """Return False to quit; reject invalid commands before touching inputs."""
@@ -49,18 +48,17 @@ class PokerTerminal:
                 seed = int(args[0]) if args else 42
             except ValueError:
                 raise ValueError("Seed must be an integer between 0 and 255") from None
-            await self.sim.reset(seed)
+            await self.sim.reset(seed, preserve_switches=True)
         elif command == "deal" and not args:
             if state.state not in (0, 5):
                 raise ValueError("Finish the current round with draw before dealing again")
             if not state.can_deal:
                 raise ValueError("Insufficient credits: use reset to start a new session")
-            await self.sim.set_holds()
             await self.sim.press_deal_draw()
             await self.sim.wait_for_state(2)
+            # Let the first HOLD-state edge sample the already synchronized switches.
+            await self.sim.advance()
         elif command == "hold":
-            if state.state != 2:
-                raise ValueError("Deal a hand before selecting holds")
             if args == ["none"]:
                 positions = []
             else:
@@ -99,14 +97,14 @@ class PokerTerminal:
 
 
 class GameScreen:
-    """Small, single-key game view; all actions still use external RTL inputs."""
+    """Scripted key scenarios for tests. Live frontends use BoardControls."""
 
     PROFILES = ("clean", "bounce", "short", "long")
 
     def __init__(self, sim):
         self.sim = sim
         self.profile = 0
-        self.messages = deque(["Space to deal. Keys 1-5 toggle holds after dealing."], maxlen=4)
+        self.messages = deque(["Space to deal. Keys 1-5 toggle physical hold switches anytime."], maxlen=4)
 
     def render(self):
         state = self.sim.snapshot()
@@ -131,6 +129,7 @@ class GameScreen:
             "  " + "  ".join("+----------+" for _ in range(5)),
             "  " + "  ".join(f"{'HELD' if state.holds & (1 << i) else '':^12}" for i in range(5)),
             "  " + "  ".join(f"{'[' + str(i) + ']':^12}" for i in range(1, 6)),
+            "  " + "  ".join(f"{'ON' if self.sim.holds & (1 << i) else 'OFF':^12}" for i in range(5)),
             "",
         ]
         if state.state == 5:
@@ -145,7 +144,7 @@ class GameScreen:
             f"Button: {profile.upper():6}   Accepted presses: {self.sim.accepted_presses}   Cycle: {self.sim.cycles}",
             f"Debounce: {self.sim.debounce_cycles} cycles (accelerated testbench; hardware: 20 ms)",
             "B changes button: clean / bounce / short / long",
-            "Space Deal/Draw | 1-5 Toggle hold | R Reset seed 42 | Q Quit",
+            "Space Deal/Draw | 1-5 Switches | R Reset (keeps switches) | Q Quit",
             "Simulation pauses between keys. C/D/H/S suit names shown on cards.",
             "-" * 70,
             *self.messages,
@@ -161,15 +160,15 @@ class GameScreen:
             self.profile = (self.profile + 1) % len(self.PROFILES)
             self.messages.append(f"Button profile: {self.PROFILES[self.profile]}.")
         elif key == "r":
-            await self.sim.reset(42)
+            await self.sim.reset(42, preserve_switches=True)
             self.messages.clear()
-            self.messages.append("Reset: 100 credits, seed 42.")
+            self.messages.append("Reset: 100 credits, seed 42; switch positions preserved.")
         elif key in "12345" and len(key) == 1:
-            if state.state != 2:
-                self.messages.append("Deal a hand before selecting holds.")
-            else:
-                mask = state.holds ^ (1 << (int(key) - 1))
-                await self.sim.set_holds(*(i + 1 for i in range(5) if mask & (1 << i)))
+            # Physical switches are independent of the core's frozen held_cards.
+            position = int(key)
+            mask = self.sim.holds ^ (1 << (position - 1))
+            await self.sim.set_holds(*(i + 1 for i in range(5) if mask & (1 << i)))
+            self.messages.append(f"Switch {position}: {'ON' if mask & (1 << (position - 1)) else 'OFF'}.")
         elif key == " ":
             if state.state in (0, 5) and not state.can_deal:
                 self.messages.append("Not enough credits. Press R to reset.")
@@ -181,49 +180,8 @@ class GameScreen:
                 self.messages.append(f"{profile.upper()}: rejected by debounce; no game action.")
             else:
                 await self.sim.wait_for_state(5 if state.state == 2 else 2)
+                if state.state != 2:
+                    await self.sim.advance()
                 count = self.sim.accepted_presses - before
                 self.messages.append(f"{profile.upper()}: {count} accepted press; {'draw' if state.state == 2 else 'deal'} complete.")
         return True
-
-    async def run(self, keyboard, display):
-        # Use the controlling terminal, not simulator-wrapped Python stdio.
-        import termios
-        import tty
-
-        fd = keyboard.fileno()
-        previous = termios.tcgetattr(fd)
-        try:
-            tty.setcbreak(fd)
-            # Deliver Ctrl-C as a key instead of signaling the simulator/make tree.
-            settings = termios.tcgetattr(fd)
-            settings[3] &= ~termios.ISIG
-            termios.tcsetattr(fd, termios.TCSANOW, settings)
-            display.write("\x1b[?1049h\x1b[?25l")
-            while True:
-                display.write("\x1b[H\x1b[2J" + self.render())
-                display.flush()
-                key = os.read(fd, 1).decode("utf-8", errors="ignore")
-                if not key or not await self.key(key):
-                    break
-        except KeyboardInterrupt:
-            pass
-        finally:
-            termios.tcsetattr(fd, termios.TCSADRAIN, previous)
-            display.write("\x1b[?25h\x1b[?1049l")
-            display.flush()
-
-
-@cocotb.test()
-async def interactive_poker(dut):
-    sim = PokerSim(dut)
-    await sim.reset()
-    if os.environ.get("POKER_LINE_MODE") == "1":
-        await PokerTerminal(sim).run()
-        return
-    try:
-        keyboard = open("/dev/tty", "r")
-    except OSError as error:
-        raise RuntimeError("No controlling terminal. Run make play in a terminal, "
-                           "or use make play-lines for line commands.") from error
-    with keyboard, open("/dev/tty", "w", buffering=1) as display:
-        await GameScreen(sim).run(keyboard, display)

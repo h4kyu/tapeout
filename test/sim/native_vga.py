@@ -1,0 +1,122 @@
+"""Uncapped native RTL viewer and deterministic headless capture."""
+import asyncio
+from dataclasses import asdict
+import json
+import os
+from pathlib import Path
+from queue import Empty
+import time
+
+from sim.poker_sim import PokerSim
+from sim.poker_controls import PokerTerminal
+from sim.board_controls import BoardControls
+from sim.vga_capture import Frame, FRAME_CLOCKS
+from sim.vga_viewer import ViewerState, start_server
+
+
+def rgb(rgba):
+    out = bytearray(640 * 480 * 3)
+    out[0::3] = rgba[0::4]; out[1::3] = rgba[1::4]; out[2::3] = rgba[2::4]
+    return bytes(out)
+
+
+def status(driver):
+    s = driver.metrics()
+    messages = ('Waiting for VGA sync (the inactive stub produces no frames)',
+                'VGA sync locked; scanning next frame', '640×480 VGA frame captured from output pins',
+                'Invalid line period', 'Invalid HSYNC width', 'VSYNC edge not at line start',
+                'Invalid VSYNC width or frame period', 'RGB is not black during VGA blanking')
+    return s, messages[s.status]
+
+
+async def run():
+    default_debounce = '5' if os.environ.get('VGA_HEADLESS') == '1' else '500000'
+    debounce = int(os.environ.get('VGA_DEBOUNCE_CYCLES', default_debounce))
+    sim = PokerSim.native(debounce)
+    server = None
+    try:
+        await sim.reset(int(os.environ.get('VGA_SEED', '42')))
+        terminal = PokerTerminal(sim, output=lambda *_: None)
+        for command in filter(str.strip, os.environ.get('VGA_COMMANDS', '').split(';')):
+            await terminal.command(command)
+        if os.environ.get('VGA_HEADLESS') == '1':
+            limit = int(os.environ.get('VGA_MAX_CYCLES', str(3 * FRAME_CLOCKS)))
+            start = sim.cycles
+            initial_frame = sim.driver.metrics().frames
+            while sim.cycles - start < limit:
+                # Match Cocotb capture schedule for exact screenshot/cycle comparisons.
+                await sim.advance(min(800, limit - (sim.cycles - start)))
+                s, message = status(sim.driver)
+                if s.ready and s.frames > initial_frame:
+                    number, rgba = sim.driver.latest_rgba()
+                    path = Path(os.environ.get('VGA_OUTPUT', 'output/vga.png'))
+                    Frame(number, rgb(rgba)).save(path)
+                    path.with_suffix('.json').write_text(json.dumps({
+                        'width': 640, 'height': 480, 'cycles': sim.cycles,
+                        'frame': number, 'sync_errors': s.errors,
+                        'game': asdict(sim.snapshot()), 'backend': 'verilator'}, indent=2) + '\n')
+                    print(f'VGA screenshot: {path.resolve()} ({sim.cycles:,} clocks)')
+                    return
+            raise TimeoutError(f'No complete VGA frame: {message}')
+        viewer = ViewerState()
+        server = start_server(viewer, int(os.environ.get('VGA_PORT', '8765')))
+        print(f'VGA viewer: http://localhost:{server.server_port} (Verilator, uncapped)\n'
+              'Hold Space or the button for Deal/Draw | 1-5 Switches | Hold R for Reset | Q Stop', flush=True)
+        board = BoardControls(sim)
+        reset = 0
+        next_publish = 0
+        rate_start = time.monotonic(); rate_cycles = sim.cycles
+        rate_frames = sim.driver.metrics().frames
+        clocks_per_second = generated_fps = 0
+        while True:
+            for _ in range(16):
+                try:
+                    event = viewer.inputs.get_nowait()
+                except Empty:
+                    break
+                was_reset = sim.reset_active
+                if not board.apply(event):
+                    return
+                await sim.advance(1)
+                if sim.reset_active and not was_reset:
+                    reset += 1
+                    viewer.publish({}, clear=True)
+                    next_publish = 0
+            await sim.advance(16384)
+            await asyncio.sleep(0)  # Deliver cancellation/interrupts between bounded batches.
+            now = time.monotonic()
+            # HTTP threads request a copy; only this owner calls the model.
+            if viewer.take_frame_request():
+                frame = sim.driver.latest_rgba()
+                if frame:
+                    viewer.publish_frame(*frame)
+            if now >= next_publish:
+                s, message = status(sim.driver)
+                elapsed = now - rate_start
+                if elapsed >= 0.5:
+                    clocks_per_second = (sim.cycles - rate_cycles) / elapsed
+                    generated_fps = (s.frames - rate_frames) / elapsed
+                    rate_start = now; rate_cycles = sim.cycles; rate_frames = s.frames
+                viewer.publish({'frame': s.frames, 'reset': reset, 'cycles': sim.cycles,
+                                'message': message, 'has_frame': bool(s.ready),
+                                'switch_mask': sim.holds, 'held_cards': sim.snapshot().holds,
+                                'details': board.render(),
+                                'deal_pressed': sim.deal_pressed, 'reset_active': sim.reset_active,
+                                'seed': sim.seed, 'state': sim.snapshot().state,
+                                'balance': sim.snapshot().balance, 'accepted_presses': sim.accepted_presses,
+                                'backend': 'Verilator', 'clocks_per_second': clocks_per_second,
+                                'generated_fps': generated_fps, 'sync_errors': s.errors})
+                next_publish = now + 0.2
+    finally:
+        if server:
+            server.shutdown(); server.server_close()
+        sim.close()
+
+
+if __name__ == '__main__':
+    try:
+        asyncio.run(run())
+    except (RuntimeError, OSError, ValueError, TimeoutError) as error:
+        raise SystemExit(str(error)) from None
+    except KeyboardInterrupt:
+        pass

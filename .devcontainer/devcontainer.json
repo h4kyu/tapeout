@@ -9,6 +9,13 @@
   "runArgs": [
     "--memory=10GB"
   ],
+  "forwardPorts": [8765],
+  "portsAttributes": {
+    "8765": {
+      "label": "VGA RTL viewer",
+      "onAutoForward": "notify"
+    }
+  },
   "customizations": {
     "vscode": {
       "settings": {

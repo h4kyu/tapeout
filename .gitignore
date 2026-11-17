@@ -10,7 +10,9 @@ tt_submission
 src/user_config.json
 src/config_merged.json
 test/sim_build
-test/__pycache__/
+test/**/__pycache__/
 test/results.xml
 test/results_core.xml
 test/gate_level_netlist.v
+test/output/
+.pytest_cache/
