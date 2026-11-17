@@ -65,6 +65,15 @@ module tb ();
   end
 `endif
 
+  // Standalone combinational font lookup, also tested in gate-level runs.
+  reg [5:0] font_character = 0;
+  reg [3:0] font_row = 0;
+  wire [11:0] font_pixels;
+
+  font_rom font_unit (
+      .character(font_character), .row(font_row), .pixels(font_pixels)
+  );
+
   // Standalone debounce unit, independent of the project's button wiring.
   reg debounce_clk;
   reg debounce_rst_n;
