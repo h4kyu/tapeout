@@ -44,20 +44,34 @@ module poker_core (
     
     poker_evaluator evaluator (.cards(cards), .category(category), .payout(payout));
 
+    // Only latch the final category; its fixed award needs no separate storage.
+    always @* begin
+        case (result_category)
+            4'd1: result_payout = 12'd5;
+            4'd2: result_payout = 12'd10;
+            4'd3: result_payout = 12'd15;
+            4'd4: result_payout = 12'd20;
+            4'd5: result_payout = 12'd30;
+            4'd6: result_payout = 12'd45;
+            4'd7: result_payout = 12'd125;
+            4'd8: result_payout = 12'd250;
+            4'd9: result_payout = 12'd4000;
+            default: result_payout = 12'd0;
+        endcase
+    end
+
     always @(posedge clk or negedge rst_n) begin
         if (!rst_n) begin
             state <= IDLE;
             balance <= 16'd100;
             held_cards <= 5'b0;
             result_category <= 4'b0;
-            result_payout <= 12'b0;
         end else begin
             case (state)
                 IDLE, RESULT: if (start_deal) begin
                     balance <= balance - 16'd5;
                     held_cards <= 5'b0;
                     result_category <= 4'b0;
-                    result_payout <= 12'b0;
                     state <= DEALING;
                 end
                 DEALING: if (dealer_done) state <= HOLD;
@@ -68,7 +82,6 @@ module poker_core (
                 DRAWING: if (dealer_done) state <= EVALUATE;
                 EVALUATE: begin
                     result_category <= category;
-                    result_payout <= payout;
                     balance <= credited_balance[16] ? 16'hffff : credited_balance[15:0];
                     state <= RESULT;
                 end

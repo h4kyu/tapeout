@@ -12,6 +12,7 @@ from poker_demo import scripted_ascii_demo
 from test_terminal import terminal_commands, game_screen_and_button_profiles
 from test_core import (
     basic_deal_draw_round,
+    displayed_payout_from_final_category,
     hold_switches_do_not_trigger_deal_or_draw,
     evaluator_categories_and_reference,
     rejection_holds_and_accounting,

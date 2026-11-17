@@ -71,6 +71,8 @@ async def reset(dut):
     assert int(dut.cards.value) == 0
     assert int(dut.dealt_mask.value) == 0
     assert int(dut.state.value) == 0
+    assert int(dut.result_category.value) == 0
+    assert int(dut.result_payout.value) == 0
     dut.rst_n.value = 1
     await tick(dut)
 
@@ -134,6 +136,39 @@ async def basic_deal_draw_round(dut):
     assert int(dut.can_deal.value) == 1
     await tick(dut, 5)
     assert int(dut.balance.value) == 105
+
+
+@cocotb.test()
+async def displayed_payout_from_final_category(dut):
+    """Every final award survives RESULT and clears before the next hand."""
+    dut = dut.core_unit
+    await reset(dut)
+    # Start with a win so clearing is also checked before the losing hand.
+    cases = [
+        ([10, 11, 12, 13, 14], 9),
+        ([2, 0x15, 0x29, 0x3B, 13], 0),
+        ([11, 0x1B, 0x22, 0x35, 9], 1),
+        ([2, 0x12, 0x2D, 0x3D, 9], 2),
+        ([7, 0x17, 0x27, 0x3B, 14], 3),
+        ([10, 0x1B, 0x2C, 0x3D, 14], 4),
+        ([2, 5, 8, 11, 14], 5),
+        ([7, 0x17, 0x27, 0x3E, 14], 6),
+        ([7, 0x17, 0x27, 0x37, 14], 7),
+        ([4, 5, 6, 7, 8], 8),
+    ]
+    for cards, category in cases:
+        await deal(dut, cards)
+        assert int(dut.result_category.value) == 0
+        assert int(dut.result_payout.value) == 0
+        balance_before = int(dut.balance.value)
+        await press_deal_draw(dut, 31)
+        await wait_state(dut, 5)
+        for _ in range(3):
+            assert int(dut.result_category.value) == category
+            assert int(dut.result_payout.value) == PAYOUTS[category]
+            assert int(dut.balance.value) == balance_before + PAYOUTS[category]
+            await tick(dut)
+    await reset(dut)
 
 
 @cocotb.test()
