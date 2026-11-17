@@ -260,6 +260,51 @@ async def rejection_holds_and_accounting(dut):
 
 
 @cocotb.test()
+async def used_card_mask_all_codes(dut):
+    """Check all 52 compact mask bits, invalid codes, and round/draw lifetime."""
+    dut = dut.core_unit
+    await reset(dut)
+    invalid_codes = [(s << 4) | r for s in range(4) for r in (0, 1, 15)]
+    for rank in range(2, 15):
+        # Every valid code is accepted in an initial hand across these rounds.
+        initial = [(s << 4) | rank for s in range(4)]
+        initial.append(2 if rank == 14 else rank + 1)
+        replacements = [c for c in DECK if c not in initial][:5]
+        await press_deal_draw(dut)
+        await tick(dut)  # Dealer starts and clears the previous round's mask.
+        assert int(dut.dealt_mask.value) == 0
+        assert int(dut.cards.value) == 0
+
+        # A valid code without prng_ready must not be recorded.
+        dut.candidate.value = initial[0]
+        await tick(dut)
+        assert int(dut.dealt_mask.value) == 0
+        assert int(dut.cards.value) == 0
+        await offer(dut, initial[0])
+        for rejected in invalid_codes + [initial[0]]:
+            await offer(dut, rejected)
+            assert int(dut.dealt_mask.value) == used(initial[:1])
+            assert int(dut.cards.value) == pack(initial[:1])
+        for i, card in enumerate(initial[1:], 2):
+            await offer(dut, card)
+            assert int(dut.dealt_mask.value) == used(initial[:i])
+        await wait_state(dut, 2)
+        assert hand(dut) == initial
+
+        await press_deal_draw(dut)  # Replace all five; discards stay marked.
+        for rejected in initial + invalid_codes:
+            await offer(dut, rejected)
+            assert int(dut.dealt_mask.value) == used(initial)
+            assert hand(dut) == initial
+        for i, card in enumerate(replacements, 1):
+            await offer(dut, card)
+            assert int(dut.dealt_mask.value) == used(initial + replacements[:i])
+        await wait_state(dut, 5)
+        assert hand(dut) == replacements
+    await reset(dut)
+
+
+@cocotb.test()
 async def all_hold_masks_and_random_rounds(dut):
     dut = dut.core_unit
     rng = random.Random(52)
@@ -288,6 +333,42 @@ async def all_hold_masks_and_random_rounds(dut):
         assert int(dut.dealt_mask.value) == used(consumed)
         assert int(dut.result_category.value) == category
         assert int(dut.balance.value) == expected_balance + PAYOUTS[category]
+
+
+@cocotb.test()
+async def balance_arithmetic_boundaries(dut):
+    """Check wager eligibility and payout carry at the 16-bit boundaries."""
+    dut = dut.core_unit
+    for starting_balance in [0, 1, 2, 3, 4, 5, 6, 65535]:
+        await reset(dut)
+        # Seed the register directly to exercise boundaries without long games.
+        dut.balance.value = starting_balance
+        await Timer(1, unit="ns")
+        assert int(dut.can_deal.value) == (starting_balance >= 5)
+        await press_deal_draw(dut)
+        assert int(dut.state.value) == (1 if starting_balance >= 5 else 0)
+        assert int(dut.balance.value) == (
+            starting_balance - 5 if starting_balance >= 5 else starting_balance
+        )
+
+    hands = [
+        ([2, 0x15, 0x29, 0x3B, 13], 0),
+        ([11, 0x1B, 0x22, 0x35, 9], 5),
+        ([10, 11, 12, 13, 14], 4000),
+    ]
+    for cards, payout in hands:
+        for starting_balance in sorted({0, 65534 - payout, 65535 - payout, 65535}):
+            await reset(dut)
+            await deal(dut, cards)
+            dut.balance.value = starting_balance
+            await Timer(1, unit="ns")
+            await press_deal_draw(dut, 31)
+            await wait_state(dut, 5)
+            expected = min(65535, starting_balance + payout)
+            assert int(dut.result_payout.value) == payout
+            assert int(dut.balance.value) == expected
+            await tick(dut, 2)
+            assert int(dut.balance.value) == expected
 
 
 @cocotb.test()

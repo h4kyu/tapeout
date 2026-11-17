@@ -15,6 +15,8 @@ from test_core import (
     hold_switches_do_not_trigger_deal_or_draw,
     evaluator_categories_and_reference,
     rejection_holds_and_accounting,
+    used_card_mask_all_codes,
+    balance_arithmetic_boundaries,
     all_hold_masks_and_random_rounds,
     bankruptcy_overflow_and_reset,
 )
