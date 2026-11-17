@@ -21,7 +21,8 @@ def build(debounce=5):
         'project.v', 'debounce.v', 'poker_inputs.v', 'prng.v', 'poker_dealer.v',
         'poker_evaluator.v', 'poker_core.v', 'vga.v', 'font_rom.v', 'payout_table.v', 'hold_labels.v', 'credits_bet.v', 'payout_characters.v', 'hand_message.v', 'card_faces.v')]
     sources += sorted((SIM_ROOT / 'native').glob('*'))
-    flags = ['--timescale', '1ns/1ns', '-O3', '-CFLAGS', '-O3 -fPIC', '-LDFLAGS', '-shared',
+    # Gated-clock models benefit from cross-module and link-time optimization.
+    flags = ['--timescale', '1ns/1ns', '-O3', '--flatten', '-CFLAGS', '-O3 -fPIC -flto -fno-semantic-interposition', '-LDFLAGS', '-shared -flto',
              '-Wno-fatal', '--top-module', 'poker_native', f'-GDEBOUNCE_CYCLES={debounce}']
     version = subprocess.check_output(['verilator', '--version']).decode().strip()
     compiler = subprocess.check_output(['g++', '--version']).decode().splitlines()[0]

@@ -31,9 +31,12 @@ font_rom text_font (
 column `glyph_x` in 0..11, use `glyph_pixels[11 - glyph_x]` to decide whether to
 paint the text color. Leave the underlying background color when the bit is 0.
 Rows 12–15 and unsupported IDs return zero. The lookup has no clock or latency.
-It selects the 12-bit row directly using `{character, row}`. Addresses returning
-the same row share one case arm; identical row patterns are shared across letters, digits, and suits.
-This avoids selecting an entire 144-bit glyph before selecting its row.
+The experimental implementation factors identical vertical column masks across
+glyphs, combines them with character decodes, and returns the same 12-bit row.
+SAT checks the complete lookup against the original row-case implementation;
+the chip test also preserves its full truth-table digest. The optional
+`sim.synthesis.font_columns` tool regenerates this representation from the
+baseline source.
 Screen coordinates, label selection, text color, and any integer scaling belong
 to the renderer. `vga.v` shares one lookup across all text, card ranks, and suit pips.
 
@@ -169,3 +172,10 @@ of the same font bitmap, with no additional font ROM. Result text is in the foot
 positions, rank rotation, pip counts, enlarged glyph coordinates, and invalid
 ranks. Native frame tests check rendered colors, corner rotation, center artwork,
 and blank reset cards.
+
+## Experimental implementation
+
+See [the area experiment](vga-area-experiment.md) for this branch's removed
+payout panel, shared geometry, gated converter banks, 18-bit working precision,
+and production 0/5 units-digit specialization. The font interface and remaining
+visible layout retain the baseline contract.

@@ -381,3 +381,14 @@ To intentionally replace the baselines after reviewing a layout change, run
 `python3 -m sim.tests.vga_golden --update` from `test/`, inspect all five images
 and the schedule diff, then run `make test-sim`. Ordinary tests never rewrite
 the fixtures. See [renderer behavior and area](../docs/vga-renderer.md).
+
+## Area experiment
+
+This branch removes the payout sheet; golden comparisons require the entire
+former payout area to be green and preserve every other pixel and replay counter.
+`make test-sim` also runs `tb_credits_exhaustive.v`: all 65,536 generic balances,
+13,108 production balances, exact commit timing, and digit requests.
+
+Optional source-reference checks and the area-focused synthesis recipe live in
+`sim/synthesis/`. See [the experiment report](../docs/vga-area-experiment.md).
+The custom sub-100% area result is not placement, clock-tree, or timing signoff.

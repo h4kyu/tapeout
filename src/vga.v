@@ -55,25 +55,6 @@ module vga (
         .glyph_x(card_glyph_x), .glyph_y(card_glyph_y), .red_suit(card_red)
     );
 
-    wire payout_active;
-    wire [1:0] payout_red;
-    wire [1:0] payout_green;
-    wire [1:0] payout_blue;
-    wire payout_text_active;
-    wire payout_numbers;
-    wire [3:0] payout_text_row;
-    wire [3:0] payout_text_column;
-    wire [3:0] payout_glyph_x;
-    wire [3:0] payout_glyph_y;
-
-    payout_table payout_sheet (
-        .x(x), .y(y), .active(payout_active),
-        .red(payout_red), .green(payout_green), .blue(payout_blue),
-        .text_active(payout_text_active), .numbers(payout_numbers),
-        .text_row(payout_text_row), .text_column(payout_text_column),
-        .glyph_x(payout_glyph_x), .glyph_y(payout_glyph_y)
-    );
-
     wire hold_text_active;
     wire [5:0] hold_character;
     wire [3:0] hold_glyph_x;
@@ -90,7 +71,7 @@ module vga (
     wire [4:0] footer_pixel_x;
     wire [4:0] footer_pixel_y;
 
-    credits_bet footer (
+    credits_bet #(.MULTIPLE_OF_FIVE(1)) footer (
         .clk(clk), .rst_n(rst_n), .x(x), .y(y), .balance(balance),
         .state(state), .payout(result_payout),
         .text_active(footer_text_active), .character(footer_character),
@@ -111,12 +92,12 @@ module vga (
         .text_column(hand_text_column), .glyph_x(), .glyph_y(), .pixel_x(hand_pixel_x), .pixel_y(hand_pixel_y)
     );
 
-    // Share the same character table for payout labels/values and hand names.
+    // Reuse the baseline hand-name character lookup; numbers are unused here.
     wire [5:0] table_character;
     payout_characters table_words (
-        .numbers(hand_text_active ? 1'b0 : payout_numbers),
-        .text_row(hand_text_active ? hand_text_row : payout_text_row),
-        .column(hand_text_active ? hand_text_column : payout_text_column),
+        .numbers(1'b0),
+        .text_row(hand_text_row),
+        .column(hand_text_column),
         .character(table_character)
     );
 
@@ -145,26 +126,27 @@ module vga (
     wire [3:0] shared20_y=scale20(hand_pixel_y);
 
     // Footer results share its native-size text request. All these text regions
-    // are spatially separate from the cards and payout sheet.
-    wire [5:0] font_character = footer_text_active ? footer_character :
-                               hold_text_active ? hold_character :
-                               (hand_text_active || payout_text_active) ? table_character : card_character;
-    wire [3:0] font_row = footer_text_active ? footer_pixel_y[3:0] :
-                         hold_text_active ? hold_glyph_y :
-                         hand_text_active ? shared20_y :
-                         payout_text_active ? payout_glyph_y : card_glyph_y;
-    wire [3:0] font_column = footer_text_active ? footer_pixel_x[3:0] :
-                            hold_text_active ? hold_glyph_x :
-                            hand_text_active ? shared20_x :
-                            payout_text_active ? payout_glyph_x : card_glyph_x;
+    // are spatially separate from the card and hand-name regions.
+    wire footer_zone = y >= 416;
+    wire card_zone = y >= 261;
+    wire hold_zone = y >= 246;
+    wire [5:0] font_character = footer_zone ? footer_character :
+                               card_zone ? card_character :
+                               hold_zone ? hold_character : table_character;
+    wire [3:0] font_row = footer_zone ? footer_pixel_y[3:0] :
+                         card_zone ? card_glyph_y :
+                         hold_zone ? hold_glyph_y : shared20_y;
+    wire [3:0] font_column = footer_zone ? footer_pixel_x[3:0] :
+                            card_zone ? card_glyph_x :
+                            hold_zone ? hold_glyph_x : shared20_x;
     wire font_active = (footer_text_active || hold_text_active ||
-                        hand_text_active || payout_text_active || card_text_active);
+                        hand_text_active || card_text_active);
     wire font_yellow = footer_text_active || (hand_text_active && hand_yellow);
-    wire font_card = card_text_active && !(footer_text_active ||
-                                          hold_text_active || hand_text_active || payout_text_active);
+    // The text regions are vertically disjoint, and active glyph coordinates
+    // are already bounded to 0..11 by every producer.
+    wire font_card = card_text_active;
     wire [11:0] font_pixels;
-    wire text_pixel = font_active && (font_column < 4'd12)
-                      && font_pixels[4'd11 - font_column];
+    wire text_pixel = font_active && font_pixels[4'd11 - font_column];
 
     font_rom text_font (
         .character(font_character), .row(font_row), .pixels(font_pixels)
@@ -184,13 +166,6 @@ module vga (
                 red   = 2'b11;
                 green = 2'b11;
                 blue  = 2'b11;
-            end
-
-            // Composite the payout panels over the background and cards.
-            if (payout_active) begin
-                red   = payout_red;
-                green = payout_green;
-                blue  = payout_blue;
             end
 
             // Text is drawn last so glyph pixels overwrite the table panels.

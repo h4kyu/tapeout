@@ -98,22 +98,9 @@ module hand_message (
             x >= left && x < {1'b0,left} + character_count * 10'd20) begin
             text_active = 1'b1;
             local_x = x - left;
-            if (local_x >= 280) begin column = 14; cell_left = 280; end
-            else if (local_x >= 260) begin column = 13; cell_left = 260; end
-            else if (local_x >= 240) begin column = 12; cell_left = 240; end
-            else if (local_x >= 220) begin column = 11; cell_left = 220; end
-            else if (local_x >= 200) begin column = 10; cell_left = 200; end
-            else if (local_x >= 180) begin column = 9; cell_left = 180; end
-            else if (local_x >= 160) begin column = 8; cell_left = 160; end
-            else if (local_x >= 140) begin column = 7; cell_left = 140; end
-            else if (local_x >= 120) begin column = 6; cell_left = 120; end
-            else if (local_x >= 100) begin column = 5; cell_left = 100; end
-            else if (local_x >= 80) begin column = 4; cell_left = 80; end
-            else if (local_x >= 60) begin column = 3; cell_left = 60; end
-            else if (local_x >= 40) begin column = 2; cell_left = 40; end
-            else if (local_x >= 20) begin column = 1; cell_left = 20; end
-            text_column = column[3:0];
-            x_offset = local_x - cell_left;
+            column = local_x / 9'd20;
+            text_column = column;
+            x_offset = local_x % 9'd20;
             y_offset = y - 213;
         end
     end

@@ -31,8 +31,11 @@ module poker_core (
     wire [3:0] category;
     wire [11:0] payout;
     // Expose the existing evaluator for live display; no second evaluator.
-    assign hand_category = category;
-    wire [16:0] credited_balance = {1'b0, balance} + {5'b0, payout};
+    // The dealer guarantees unique valid cards once the initial hand is full.
+    // During its initial fill, the old evaluator returned zero for empty slots.
+    assign hand_category = (state==IDLE || (state==DEALING && !dealer_done)) ? 4'd0 : category;
+    wire [16:0] balance_change = start_deal ? 17'h1fffb : {5'b0,payout};
+    wire [16:0] credited_balance = {1'b0,balance} + balance_change;
     assign can_deal = (state == IDLE || state == RESULT) && balance >= 16'd5;
     wire start_deal = deal_draw_pulse && can_deal;
     wire start_draw = deal_draw_pulse && state == HOLD;
@@ -45,7 +48,7 @@ module poker_core (
         .done(dealer_done), .cards(cards), .dealt_mask(dealt_mask)
     );
     
-    poker_evaluator evaluator (.cards(cards), .category(category), .payout(payout));
+    poker_evaluator #(.DEALER_VALIDATED(1)) evaluator (.cards(cards), .category(category), .payout(payout));
 
     // Only latch the final category; its fixed award needs no separate storage.
     always @* begin
@@ -63,16 +66,21 @@ module poker_core (
         endcase
     end
 
+    wire balance_clock;
+    clock_gate balance_gate(.clk(clk),.enable(start_deal || state==EVALUATE),.gated_clk(balance_clock));
+    always @(posedge balance_clock or negedge rst_n) begin
+        if(!rst_n) balance<=16'd100;
+        else balance<=(state==EVALUATE && credited_balance[16]) ? 16'hffff : credited_balance[15:0];
+    end
+
     always @(posedge clk or negedge rst_n) begin
         if (!rst_n) begin
             state <= IDLE;
-            balance <= 16'd100;
             held_cards <= 5'b0;
             result_category <= 4'b0;
         end else begin
             case (state)
                 IDLE, RESULT: if (start_deal) begin
-                    balance <= balance - 16'd5;
                     held_cards <= 5'b0;
                     result_category <= 4'b0;
                     state <= DEALING;
@@ -85,7 +93,6 @@ module poker_core (
                 DRAWING: if (dealer_done) state <= EVALUATE;
                 EVALUATE: begin
                     result_category <= category;
-                    balance <= credited_balance[16] ? 16'hffff : credited_balance[15:0];
                     state <= RESULT;
                 end
                 default: state <= IDLE;

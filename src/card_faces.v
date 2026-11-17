@@ -14,36 +14,22 @@ module card_faces (
     output wire red_suit
 );
     reg [5:0] selected_card;
-    reg [6:0] card_x;
-    reg [7:0] card_y;
-    reg [2:0] slot;
-    reg [9:0] card_left; // Select the origin before subtracting local x.
+    wire [6:0] column_x;
+    wire [2:0] slot;
+    wire column_active;
+    card_column column_geometry(.x(x), .local_x(column_x), .slot(slot), .active(column_active));
+    wire [6:0] card_x = column_x;
+    wire [7:0] card_y = y[7:0] - 8'd5; // (y - 261) modulo 256.
     always @* begin
-        active = 1'b0;
-        selected_card = 6'd0;
-        card_x = 0;
-        card_y = 0;
-        slot = 3'd0;
-        card_left = 10'd23;
-        if (x >= 23 && x < 617 && y >= 261 && y < 415) begin
-            if (x >= 507) begin slot = 3'd4; card_left = 10'd507; end
-            else if (x >= 386) begin slot = 3'd3; card_left = 10'd386; end
-            else if (x >= 265) begin slot = 3'd2; card_left = 10'd265; end
-            else if (x >= 144) begin slot = 3'd1; card_left = 10'd144; end
-            if (x < card_left + 10'd110) begin
-                active = 1'b1;
-                card_x = x - card_left;
-                card_y = y - 261;
-                case (slot)
-                    3'd0: selected_card = cards[5:0];
-                    3'd1: selected_card = cards[11:6];
-                    3'd2: selected_card = cards[17:12];
-                    3'd3: selected_card = cards[23:18];
-                    3'd4: selected_card = cards[29:24];
-                    default: selected_card = 6'd0;
-                endcase
-            end
-        end
+        active = column_active && column_x < 7'd110 && y >= 261 && y < 415;
+        case (slot)
+            0: selected_card=cards[5:0];
+            1: selected_card=cards[11:6];
+            2: selected_card=cards[17:12];
+            3: selected_card=cards[23:18];
+            4: selected_card=cards[29:24];
+            default: selected_card=0;
+        endcase
     end
 
     wire [3:0] rank = selected_card[3:0];
@@ -199,4 +185,19 @@ module card_faces (
 
     assign glyph_x = x_offset[3:0];
     assign glyph_y = y_offset[3:0];
+endmodule
+
+// Identical instances in card and HOLD renderers share after flattening.
+module card_column(input wire [9:0] x, output wire [6:0] local_x,
+                   output reg [2:0] slot, output wire active);
+    reg [6:0] origin;
+    always @* begin
+        slot=0; origin=7'd23;
+        if (x>=507) begin slot=4; origin=7'd123; end
+        else if (x>=386) begin slot=3; origin=7'd2; end
+        else if (x>=265) begin slot=2; origin=7'd9; end
+        else if (x>=144) begin slot=1; origin=7'd16; end
+    end
+    assign local_x=x[6:0]-origin;
+    assign active=x>=23 && x<617;
 endmodule

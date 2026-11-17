@@ -2,7 +2,7 @@
 
 // Footer glyph requests. Uses the shared font ROM in vga.v; no ROM here.
 // BET, credits, and result share native 12-pixel cells with yellow text.
-module credits_bet (
+module credits_bet #(parameter MULTIPLE_OF_FIVE=0) (
     input wire [2:0] state,
     input wire [11:0] payout,
     input  wire clk,
@@ -44,44 +44,75 @@ module credits_bet (
     // The input value sampled at conversion start also detects subsequent
     // changes after completion; a second saved balance register is unnecessary.
     reg [15:0] sampled_balance;
-    reg [19:0] decimal_shift;
+    reg [17:0] decimal_shift;
     reg [4:0] bits_left;
     wire busy=(bits_left != 5'd0);
     reg [19:0] adjusted_digits;
     integer digit;
 
-    always @* begin
-        adjusted_digits = decimal_shift;
-        for (digit = 0; digit < 5; digit = digit + 1) begin
-            if (decimal_shift[digit * 4 +: 4] >= 4'd5)
-                adjusted_digits[digit * 4 +: 4] = decimal_shift[digit * 4 +: 4] + 4'd3;
+    function [3:0] adjust_bcd;
+        input [3:0] nibble;
+        begin
+            case(nibble)
+                4'd0:adjust_bcd=4'd0;
+                4'd1:adjust_bcd=4'd1;
+                4'd2:adjust_bcd=4'd2;
+                4'd3:adjust_bcd=4'd3;
+                4'd4:adjust_bcd=4'd4;
+                4'd5:adjust_bcd=4'd8;
+                4'd6:adjust_bcd=4'd9;
+                4'd7:adjust_bcd=4'd10;
+                4'd8:adjust_bcd=4'd11;
+                4'd9:adjust_bcd=4'd12;
+                default:adjust_bcd=4'bx;
+            endcase
         end
+    endfunction
+    always @* begin
+        adjusted_digits={2'b00,decimal_shift};
+        for(digit=0;digit<4;digit=digit+1)
+            adjusted_digits[digit*4 +:4]=adjust_bcd(decimal_shift[digit*4 +:4]);
     end
 
     wire [19:0] next_digits = {adjusted_digits[18:0], sampled_balance[bits_left[3:0]-4'd1]};
 
-    always @(posedge clk or negedge rst_n) begin
-        if (!rst_n) begin
-            displayed_digits <= 20'h00100;
-            sampled_balance <= 16'd100;
-
-            decimal_shift <= 20'd0;
-            bits_left <= 5'd0;
-        end else if (busy) begin
-            decimal_shift <= next_digits;
-
-            if (bits_left == 5'd1) begin
-                displayed_digits <= next_digits;
-                bits_left <= 5'd0;
-            end else begin
-                bits_left <= bits_left - 5'd1;
-            end
-        end else if (balance != sampled_balance) begin
-            sampled_balance <= balance;
-
-            decimal_shift <= 20'd0;
-            bits_left <= 5'd16;
+    wire work_clock, sample_clock, display_clock;
+    wire changed=(balance!=sampled_balance);
+    clock_gate work_gate(.clk(clk),.enable(busy || changed),.gated_clk(work_clock));
+    clock_gate sample_gate(.clk(clk),.enable(!busy && changed),.gated_clk(sample_clock));
+    clock_gate display_gate(.clk(clk),.enable(busy && bits_left==1),.gated_clk(display_clock));
+    always @(posedge sample_clock or negedge rst_n) begin
+        if(!rst_n) sampled_balance<=16'd100;
+        else sampled_balance<=balance;
+    end
+    always @(posedge display_clock or negedge rst_n) begin
+        if(!rst_n) displayed_digits<=20'h00100;
+        // Production balances are multiples of five: reset=100, wager=5,
+        // every award is a multiple of five, and saturation=65535. Thus the
+        // units digit needs one stored bit (0 or 5), not four independent FFs.
+        else if(MULTIPLE_OF_FIVE)
+            displayed_digits<={next_digits[19:4],1'b0,next_digits[0],1'b0,next_digits[0]};
+        else displayed_digits<=next_digits;
+    end
+    always @(posedge work_clock or negedge rst_n) begin
+        if(!rst_n) begin decimal_shift<=0; bits_left<=0; end
+        else begin
+            decimal_shift<=busy ? next_digits[17:0] : 18'd0;
+            bits_left<=busy ? bits_left-5'd1 : 5'd16;
         end
+    end
+
+    reg [3:0] credit_digit;
+    wire [3:0] digit_id=credit_digit+4'd1;
+    always @* begin
+        case (column)
+            0: credit_digit=displayed_digits[19:16];
+            1: credit_digit=displayed_digits[15:12];
+            2: credit_digit=displayed_digits[11:8];
+            3: credit_digit=displayed_digits[7:4];
+            4: credit_digit=displayed_digits[3:0];
+            default: credit_digit=0;
+        endcase
     end
 
     function [5:0] credits_character;
@@ -117,8 +148,9 @@ module credits_bet (
     reg [3:0] column;
     reg [4:0] x_offset;
     reg [4:0] y_offset;
-    reg [7:0] local_x;
-    reg [7:0] cell_left;
+    reg [6:0] local_x;
+    reg [6:0] origin;
+    reg [3:0] cell_phase;
     reg [2:0] region;
 
     always @* begin
@@ -126,43 +158,47 @@ module credits_bet (
         character = 6'd0;
         x_offset = 0;
         y_offset = 0;
-        local_x = 0;
+        origin = 0;
         region = 3'd0;
         // Choose a text region before decoding the character position.
         if (y >= 446 && y < 458) begin
             if (x >= 25 && x < 85) begin
                 region = 3'd1;
-                local_x = x - 25;
+                origin = 7'd25;
             end else if (x >= 10'd459 && x < 10'd543) begin
                 region = 3'd2;
-                local_x = x - 10'd459;
+                origin = 7'd75;
             end else if (x >= 555 && x < 615) begin
                 region = 3'd3;
-                local_x = x - 555;
+                origin = 7'd43;
             end else if (result_ready && x>=266 && x<374) begin
                 region=3'd4;
-                local_x=x-266;
+                origin=7'd10;
             end
         end
+        local_x = x[6:0] - origin;
         // All regions share this cell decoder and glyph-offset subtractor.
-        column = 0;
-        cell_left = 0;
-        if (local_x >= 96) begin column=8; cell_left=96; end
-        else if (local_x >= 84) begin column=7; cell_left=84; end
-        else if (local_x >= 72) begin column = 6; cell_left = 72; end
-        else if (local_x >= 60) begin column = 5; cell_left = 60; end
-        else if (local_x >= 48) begin column = 4; cell_left = 48; end
-        else if (local_x >= 36) begin column = 3; cell_left = 36; end
-        else if (local_x >= 24) begin column = 2; cell_left = 24; end
-        else if (local_x >= 12) begin column = 1; cell_left = 12; end
+        case(local_x[6:2])
+5'd0, 5'd1, 5'd2: column=4'd0;
+5'd3, 5'd4, 5'd5: column=4'd1;
+5'd6, 5'd7, 5'd8: column=4'd2;
+5'd9, 5'd10, 5'd11: column=4'd3;
+5'd12, 5'd13, 5'd14: column=4'd4;
+5'd15, 5'd16, 5'd17: column=4'd5;
+5'd18, 5'd19, 5'd20: column=4'd6;
+5'd21, 5'd22, 5'd23: column=4'd7;
+5'd24, 5'd25, 5'd26: column=4'd8;
+            default:column=4'bx;
+        endcase
+        cell_phase=local_x[3:0]+{column[1:0],2'b00};
         if (region != 3'd0) begin
             text_active = 1'b1;
-            x_offset = local_x - cell_left;
+            x_offset = {1'b0,cell_phase};
             y_offset = y - 446;
             case (region)
                 2'd1: character = bet_character(column[2:0]);
                 2'd2: character = credits_character(column[2:0]);
-                2'd3: character = 6'd1 + {2'b00, displayed_digits[(4'd4 - column) * 4 +: 4]};
+                2'd3: character = {2'b00, digit_id};
                 3'd4: begin
                     if (payout == 0) begin
                         case (column)
