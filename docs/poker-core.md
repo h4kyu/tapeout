@@ -38,6 +38,7 @@ All transfers occur on the rising edge of the system clock. Reset is active-low 
 | `held_cards[4:0]` | Output | Hold indicators: track switches in HOLD, frozen during draw/result |
 | `state[2:0]` | Output | State codes below |
 | `balance[15:0]` | Output | Current credit balance |
+| `hand_category[3:0]` | Output | Live classification of the current cards; display when the hand is complete |
 | `result_category[3:0]` | Output | Final hand category, valid in RESULT |
 | `result_payout[11:0]` | Output | Final award, valid in RESULT |
 | `can_deal` | Output | Idle/result state with at least five credits |
@@ -49,7 +50,9 @@ An adapter can assert `prng_ready` continuously and advance the LFSR on `dealer_
 Pulses while busy are ignored, not queued. The final input adapter must produce one pulse per debounced press and require a debounced release before rearming, we avoid connecting `button_out` directly to `deal_draw_pulse`.
 
 The dealer samples `start`, `draw_mode` and the hold mask together when idle.
-The evaluator is combinational, so the controller's EVALUATE state supplies a full cycle for it to settle. 
+The evaluator is combinational, so the controller's EVALUATE state supplies a full cycle for it to settle.
+`hand_category` exposes this same evaluator for the live VGA message; it does not
+instantiate another evaluator. `result_category` still latches the final award.
 
 ## Round and accounting rules
 
@@ -93,22 +96,21 @@ through the existing debounce filter and rising-edge detection, generating one
 action per accepted press. The wrapper's `DEBOUNCE_CYCLES` parameter defaults
 to 500,000 (20 ms at 25 MHz); RTL integration tests override it to five.
 
-`project.v` connects the game-state wires to the `vga` interface and maps its
-RGB/sync outputs to the documented VGA pins. This stage is an inactive stub:
-all RGB and sync outputs are tied low, so `uo_out` is zero and does not produce
-a valid VGA signal. The temporary game-status byte has been removed. Timing
-and rendering will be implemented separately. The game remains observable to
-RTL simulation through the named wrapper wires, but synthesis can optimize it
-away while the stub ignores its inputs. Area measurements of this intermediate
-top level do not represent the completed game.
+`project.v` connects the game-state wires to the active `vga` renderer and maps
+its RGB/sync outputs to the documented VGA pins. The current renderer generates
+640×480 video with card faces, the payout sheet, HOLD labels, hand names, and a
+native-size credits/BET/result footer. The core's existing evaluator supplies
+the live category; no extra evaluator is instantiated. Game-state signals remain
+available as named wrapper wires for RTL simulation.
 
 The terminal simulator derives deal availability from the exposed state and
 balance: state IDLE or RESULT, with at least five credits. It does not require a
 wrapper-level `can_deal` wire.
 
-Run `make` in `test/` with the pinned Python dependencies and Icarus Verilog installed. The shared testbench contains standalone core and evaluator instances, and `test.py` imports the core tests alongside the wrapper and debounce tests. GitHub's existing RTL test workflow runs the combined suite and reports results in `results.xml`. The 18-test suite includes every category and straight window, permutations, 3,000 random valid hands, 1,000 raw encoded hands, all 32 hold masks, every valid/invalid card code, ten-card rejection and reuse, balance boundaries, displayed payouts, accounting and reset.
+Run `make` in `test/` with the pinned Python dependencies and Icarus Verilog installed. The shared testbench contains standalone core and evaluator instances, and `test.py` imports the core tests alongside the wrapper and debounce tests. GitHub's existing RTL test workflow runs the combined suite and reports results in `results.xml`. The 22-test chip suite includes every category and straight window, permutations, 3,000 random valid hands, 1,000 raw encoded hands, all 32 hold masks, every valid/invalid card code, ten-card rejection and reuse, balance boundaries, displayed payouts, accounting and reset, plus font and VGA component coverage.
 
-See [the staged area results](combined-area-results.md) for routed measurements
-and extracted timing at 25 MHz, including remaining slow-corner setup violations.
-The gate-level job checks wrapper reset/status; standalone gameplay tests still
-use RTL in that job.
+See [the staged area results](combined-area-results.md) for the upstream core
+and retained-output-shell routing/timing measurements, including remaining
+slow-corner setup violations. Those results do not establish fit or timing for
+the complete active renderer. The gate-level job checks defined wrapper outputs
+across reset; standalone gameplay tests still use RTL in that job.

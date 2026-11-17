@@ -112,6 +112,7 @@ async def deal(dut, cards, holds=0):
         await offer(dut, card)
     await wait_state(dut, 2)
     assert hand(dut) == cards
+    assert int(dut.hand_category.value) == reference(cards)
 
 
 @cocotb.test()
@@ -131,6 +132,7 @@ async def basic_deal_draw_round(dut):
     await wait_state(dut, 5)
     assert hand(dut) == [2, 0x12, 0x29, 0x1D, 13]
     assert int(dut.result_category.value) == 2
+    assert int(dut.hand_category.value) == 2
     assert int(dut.result_payout.value) == 10
     assert int(dut.balance.value) == 105
     assert int(dut.can_deal.value) == 1

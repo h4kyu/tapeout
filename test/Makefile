@@ -6,8 +6,8 @@ SIM ?= icarus
 FST ?= -fst # Use more efficient FST format
 TOPLEVEL_LANG ?= verilog
 SRC_DIR = $(PWD)/../src
-PROJECT_SOURCES = project.v debounce.v poker_inputs.v prng.v poker_dealer.v poker_evaluator.v poker_core.v vga.v
-UNIT_TEST_SOURCES = debounce.v poker_inputs.v prng.v poker_dealer.v poker_evaluator.v poker_core.v
+PROJECT_SOURCES = project.v debounce.v poker_inputs.v prng.v poker_dealer.v poker_evaluator.v poker_core.v vga.v font_rom.v payout_table.v hold_labels.v credits_bet.v payout_characters.v hand_message.v card_faces.v
+UNIT_TEST_SOURCES = debounce.v poker_inputs.v prng.v poker_dealer.v poker_evaluator.v poker_core.v font_rom.v hold_labels.v credits_bet.v payout_characters.v hand_message.v card_faces.v
 
 ifneq ($(GATES),yes)
 

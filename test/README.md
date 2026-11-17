@@ -6,7 +6,9 @@ See below to get started or for more information, check the [website](https://ti
 ## Layout and test suites
 
 Chip functionality tests stay directly in `test/`: `test.py`, `test_core.py`,
-`test_debounce.py`, `test_inputs.py`, and `test_prng.py`. The shared RTL testbench,
+`test_debounce.py`, `test_inputs.py`, `test_prng.py`, `test_font.py`,
+`test_payout.py`, `test_hold.py`, `test_status.py`, `test_hand_message.py`, and
+`test_win.py`. The shared RTL testbench,
 Makefile, dependencies, and this guide also stay at the root.
 
 Auxiliary tooling lives in the `sim` Python package:
@@ -125,16 +127,13 @@ holds, rejected short presses, held-button behavior, payouts, subsequent rounds,
 and reset during dealing. RTL tests override the wrapper's `DEBOUNCE_CYCLES`
 parameter to five; synthesis and gate-level simulation retain 500,000 cycles.
 The internal-state test does not exercise a flattened gate-level netlist; the
-gate-level wrapper test currently checks the zero-output VGA stub and
-bidirectional outputs across reset.
+gate-level wrapper test checks defined outputs and bidirectional pins across
+reset. Exact VGA pin packing is checked in RTL.
 Full gate-level gameplay coverage remains to be added.
 
-The initial VGA integration uses a constant-zero RGB/sync stub, which does not
-produce a valid VGA signal. With an active renderer, `uo_out` instead carries
-the RGB and sync levels defined by `vga.v`. The temporary game-status byte has
-been removed.
-Cards, held flags, balance, category, payout, and state are named wires in
-`project.v` for the upcoming renderer and ASCII simulation interface.
+The active renderer drives `uo_out` with the RGB and sync levels defined by
+`vga.v`. Cards, held flags, balance, live/final category, payout, and state are
+named wires in `project.v` for the renderer and simulation diagnostics.
 The simulator derives `can_deal` from state IDLE/RESULT and a balance of at least
 five credits instead of reading an unused wrapper wire.
 
@@ -331,3 +330,54 @@ Using Surfer
 ```sh
 surfer tb.fst
 ```
+
+## VGA font lookup
+
+`test_font.py` checks the standalone 12×12 font ROM: compact 6-bit character
+IDs, blank space/unsupported characters, row bounds, and known glyph patterns.
+The test runs with `make` and uses RTL in both RTL and gate-level runs. See
+[the font interface](../docs/font.md) for the ID mapping and renderer hookup.
+
+`test_payout.py` captures a complete frame from external RGB/sync pins and checks
+both payout panels pixel-for-pixel against the nine labels, core payout amounts,
+and standalone font ROM. It also checks leading spaces and row gaps. The RTL
+batched clock helper is used for this test; gate-level runs skip it.
+
+`test_hold.py` checks centered HOLD glyph requests, two-pixel letter gaps, and
+all five hold bits across every mask. The native simulator tests also capture
+labels after selection and after drawing, check frozen holds during RESULT,
+and verify that the next round clears them without disturbing payout text.
+
+`test_status.py` checks footer glyph positioning/scaling and decimal conversion
+at balance boundaries, seeded random values, reset, and mid-conversion changes.
+The native tests verify the visible yellow credit digits change from 00100 to 00095
+on a deal, reset to 00100, and keep BET 5 fixed.
+
+`test_hand_message.py` checks all qualifying hand names, centering, scaling,
+state visibility, and white/yellow stages. The native tests find a qualifying
+seeded deal through real controls, verify a white live message, hold all cards
+and verify the identical message in yellow after drawing, then reset to blank.
+Core deal tests also check the exported live evaluator category.
+
+`test_win.py` checks all nine award strings and GAME OVER in the fixed 12px
+footer field, with state visibility and no background panel. Native rendered
+tests check yellow results on green, unchanged card faces, and clearing the
+result on reset or a new deal.
+
+`test_cards.py` checks card rectangles and rank/suit corner indices; native tests also verify their rendered colors and rotation.
+
+## Renderer visual baselines
+
+`make test-sim` checks the five committed PNGs under `sim/fixtures/vga/` using
+both native Verilator capture and independent Icarus/Cocotb external-pin capture.
+Comparisons use decoded RGB pixels, alongside exact snapshots, accepted presses,
+and cycle totals in `schedule.json`; PNG compression bytes do not affect results.
+The replay in `sim/tests/vga_golden.py` fixes seeds and every input's cycle timing
+with five-cycle debounce. It covers reset, a dealt hand, held cards, WIN 0010,
+and GAME OVER. The replay advances two complete frame periods after each setup
+to discard partially updated frames.
+
+To intentionally replace the baselines after reviewing a layout change, run
+`python3 -m sim.tests.vga_golden --update` from `test/`, inspect all five images
+and the schedule diff, then run `make test-sim`. Ordinary tests never rewrite
+the fixtures. See [renderer behavior and area](../docs/vga-renderer.md).

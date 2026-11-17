@@ -81,7 +81,9 @@ class CocotbDriver:
             self.dut.preview_start.value = 0
             await Timer(1, unit="ns")
             if self.pin_stream is None:
-                self.pin_stream = Path("output/vga-pins.bin").open("rb")
+                # HDL rewrites this file between batches. A buffered reader can
+                # retain stale samples after a small read followed by seek(0).
+                self.pin_stream = Path("output/vga-pins.bin").open("rb", buffering=0)
             self.pin_stream.seek(0)
             samples = self.pin_stream.read(cycles)
             if len(samples) != cycles:

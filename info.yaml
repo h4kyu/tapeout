@@ -25,6 +25,13 @@ project:
     - "poker_dealer.v"
     - "poker_evaluator.v"
     - "vga.v"
+    - "font_rom.v"
+    - "payout_table.v"
+    - "hold_labels.v"
+    - "credits_bet.v"
+    - "payout_characters.v"
+    - "hand_message.v"
+    - "card_faces.v"
 
 # The pinout of your project. Leave unused pins blank. DO NOT delete or add any pins.
 # This section is for the datasheet/website. Use descriptive names (e.g., RX, TX, MOSI, SCL, SEG_A, etc.).

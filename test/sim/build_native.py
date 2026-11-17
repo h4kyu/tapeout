@@ -19,7 +19,7 @@ def build(debounce=5):
             raise RuntimeError(f'Missing {tool}: VGA playback and capture require Verilator, g++, and make')
     sources = [TEST_ROOT.parent / 'src' / name for name in (
         'project.v', 'debounce.v', 'poker_inputs.v', 'prng.v', 'poker_dealer.v',
-        'poker_evaluator.v', 'poker_core.v', 'vga.v')]
+        'poker_evaluator.v', 'poker_core.v', 'vga.v', 'font_rom.v', 'payout_table.v', 'hold_labels.v', 'credits_bet.v', 'payout_characters.v', 'hand_message.v', 'card_faces.v')]
     sources += sorted((SIM_ROOT / 'native').glob('*'))
     flags = ['--timescale', '1ns/1ns', '-O3', '-CFLAGS', '-O3 -fPIC', '-LDFLAGS', '-shared',
              '-Wno-fatal', '--top-module', 'poker_native', f'-GDEBOUNCE_CYCLES={debounce}']

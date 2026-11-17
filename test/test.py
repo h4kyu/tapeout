@@ -8,6 +8,13 @@ from cocotb.triggers import ClockCycles, Timer
 from test_debounce import test_debounce
 from test_prng import test_prng
 from test_inputs import test_player_inputs
+from test_font import font_character_mapping
+from test_payout import payout_sheet_text
+from test_hold import hold_label_geometry
+from test_status import credits_bet_readout
+from test_hand_message import hand_message_requests
+from test_win import win_banner_requests
+from test_cards import card_faces_and_indices
 from test_core import (
     basic_deal_draw_round,
     displayed_payout_from_final_category,

@@ -45,14 +45,13 @@ module tt_um_h4kyu_video_poker #(
   );
 
   // Shared game-state interface for the renderer and RTL simulation display.
-  // TODO: Remove these keeps once the VGA renderer consumes the game state.
-  // The inactive shell otherwise lets synthesis prune the entire poker core.
-  (* keep = 1 *) wire [29:0] cards;
-  (* keep = 1 *) wire [4:0] held_cards;
-  (* keep = 1 *) wire [2:0] state;
-  (* keep = 1 *) wire [15:0] balance;
-  (* keep = 1 *) wire [3:0] result_category;
-  (* keep = 1 *) wire [11:0] result_payout;
+  wire [29:0] cards;
+  wire [4:0] held_cards;
+  wire [2:0] state;
+  wire [15:0] balance;
+  wire [3:0] hand_category;
+  wire [3:0] result_category;
+  wire [11:0] result_payout;
 
   poker_core game (
     .clk(clk), .rst_n(rst_n),
@@ -60,7 +59,7 @@ module tt_um_h4kyu_video_poker #(
     .candidate(candidate), .prng_ready(prng_ready),
     .dealer_ready(), .dealt_mask(),
     .cards(cards), .held_cards(held_cards), .state(state),
-    .balance(balance), .result_category(result_category),
+    .balance(balance), .hand_category(hand_category), .result_category(result_category),
     .result_payout(result_payout), .can_deal()
   );
 
@@ -77,6 +76,7 @@ module tt_um_h4kyu_video_poker #(
     .balance        (balance),
     .held_cards     (held_cards),
     .state          (state),
+    .hand_category  (hand_category),
     .result_category(result_category),
     .result_payout  (result_payout),
     .clk            (clk),

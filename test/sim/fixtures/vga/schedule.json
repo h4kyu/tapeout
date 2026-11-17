@@ -1,0 +1,132 @@
+{
+  "reset": {
+    "seed": 42,
+    "holds": [],
+    "deal": false,
+    "draw": false,
+    "cycles": 840006,
+    "accepted_presses": 0,
+    "snapshot": {
+      "state": 0,
+      "cards": [
+        0,
+        0,
+        0,
+        0,
+        0
+      ],
+      "holds": 0,
+      "balance": 100,
+      "category": 0,
+      "payout": 0,
+      "can_deal": true
+    }
+  },
+  "dealt": {
+    "seed": 42,
+    "holds": [],
+    "deal": true,
+    "draw": false,
+    "cycles": 840280,
+    "accepted_presses": 1,
+    "snapshot": {
+      "state": 2,
+      "cards": [
+        29,
+        59,
+        54,
+        44,
+        25
+      ],
+      "holds": 0,
+      "balance": 95,
+      "category": 0,
+      "payout": 0,
+      "can_deal": false
+    }
+  },
+  "held": {
+    "seed": 42,
+    "holds": [
+      1,
+      3
+    ],
+    "deal": true,
+    "draw": false,
+    "cycles": 840283,
+    "accepted_presses": 1,
+    "snapshot": {
+      "state": 2,
+      "cards": [
+        29,
+        59,
+        54,
+        44,
+        25
+      ],
+      "holds": 5,
+      "balance": 95,
+      "category": 0,
+      "payout": 0,
+      "can_deal": false
+    }
+  },
+  "win": {
+    "seed": 23,
+    "holds": [
+      1,
+      2,
+      3,
+      4,
+      5
+    ],
+    "deal": true,
+    "draw": true,
+    "cycles": 840557,
+    "accepted_presses": 2,
+    "snapshot": {
+      "state": 5,
+      "cards": [
+        52,
+        40,
+        2,
+        4,
+        8
+      ],
+      "holds": 31,
+      "balance": 105,
+      "category": 2,
+      "payout": 10,
+      "can_deal": true
+    }
+  },
+  "game-over": {
+    "seed": 1,
+    "holds": [
+      1,
+      2,
+      3,
+      4,
+      5
+    ],
+    "deal": true,
+    "draw": true,
+    "cycles": 840557,
+    "accepted_presses": 2,
+    "snapshot": {
+      "state": 5,
+      "cards": [
+        34,
+        4,
+        9,
+        18,
+        37
+      ],
+      "holds": 31,
+      "balance": 95,
+      "category": 0,
+      "payout": 0,
+      "can_deal": true
+    }
+  }
+}
