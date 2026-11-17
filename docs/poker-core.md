@@ -110,8 +110,13 @@ wrapper-level `can_deal` wire.
 
 Run `make` in `test/` with the pinned Python dependencies and Icarus Verilog installed. The shared testbench contains standalone core and evaluator instances, and `test.py` imports the core tests alongside the wrapper and debounce tests. GitHub's existing RTL test workflow runs the combined suite and reports results in `results.xml`. The core suite includes a basic deal/draw round, hold-switch independence, every hand category, every straight window, 3,000 random valid hands, 1,000 random raw encodings, all 32 hold masks, invalid/duplicate rejection, accounting and reset. It also checks evaluator completion latency, busy-start rejection, core waiting and single crediting, and reset cancellation during evaluation.
 
-The multicycle evaluator needs a fresh synthesis and timing measurement at
-25 MHz, and a tile-fit check. The reported utilization baseline for this
-experiment is 68.086%; the new utilization is pending the next GDS flow.
-Passing behavioral simulation alone does not establish timing closure or fit
-in the currently configured tile.
+The measured multicycle experiment (`e6e9840`) increased utilization from
+68.086% at `989fd40` to 70.431%, while wire length fell from 66,630 to 59,182 um.
+Flip-flops increased from 157 to 188, and clock cells from 68 to 138. This
+implementation is an area regression and is excluded from the proposed
+area-saving combination. The supplied run screenshot shows GDS, gate-level
+test, and viewer success with precheck still running; final precheck status
+and timing metrics were not supplied. See
+[optimization observations](potential-optimizations.md) for the comparison
+and next experiment. Passing behavioral simulation alone does not establish
+timing closure.
