@@ -15,7 +15,7 @@ Verilog; synthesis does not need a font file, Python, or external memory.
 For labels, store these IDs directly; there is no ASCII conversion in hardware.
 For example, `ROYAL FLUSH` is `28,25,35,11,22,0,16,22,31,29,18`.
 
-Instantiate the lookup when adding the text renderer:
+The renderer instantiates the lookup once:
 
 ```verilog
 wire [11:0] glyph_pixels;
@@ -35,7 +35,7 @@ It selects the 12-bit row directly using `{character, row}`. Addresses returning
 the same row share one case arm; identical row patterns are shared across letters, digits, and suits.
 This avoids selecting an entire 144-bit glyph before selecting its row.
 Screen coordinates, label selection, text color, and any integer scaling belong
-to the renderer. `vga.v` shares one lookup for the payout labels and values.
+to the renderer. `vga.v` shares one lookup across all text, card ranks, and suit pips.
 
 Glyph source: [Google Fonts' Press Start 2P](https://github.com/google/fonts/tree/main/ofl/pressstart2p).
 The source TTF's SHA-256 and rasterization settings are recorded in `font_rom.v`.

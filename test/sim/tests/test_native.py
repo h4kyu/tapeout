@@ -293,3 +293,8 @@ def test_card_indices_rotate_and_use_suit_colors():
         finally:
             sim.close()
     asyncio.run(play())
+
+
+def test_renderer_golden_frames():
+    from sim.tests.vga_golden import native_replay, check_fixtures
+    check_fixtures(*asyncio.run(native_replay()))

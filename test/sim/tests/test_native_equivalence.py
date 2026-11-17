@@ -96,3 +96,21 @@ async def batched_clock_matches_pixel_driver(dut):
     reference = await play(False)
     actual = await play(True)
     assert actual == reference, "Batched clocks changed gameplay or captured pixel order"
+
+
+@cocotb.test()
+async def renderer_matches_golden_frames(dut):
+    """Independent four-state pin capture matches the native-approved RGBs."""
+    from sim.tests.vga_golden import replay, check_fixtures
+
+    if int(dut.GATE_LEVEL.value):
+        return
+    sim = PokerSim(dut, batch_clocks=True)
+    capture = VGACapture()
+    sim.observe_cycles(capture.sample)
+    try:
+        images, records = await replay(sim, lambda: capture.latest.rgb)
+        assert capture.errors == 0
+        check_fixtures(images, records)
+    finally:
+        sim.close()
