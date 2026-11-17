@@ -89,6 +89,50 @@ module tb ();
       .glyph_x(hold_glyph_x), .glyph_y(hold_glyph_y)
   );
 
+  reg status_clk;
+  reg status_rst_n;
+  reg [9:0] status_x;
+  reg [9:0] status_y;
+  reg [15:0] status_balance;
+  reg [2:0] status_state = 0;
+  reg [11:0] status_payout = 0;
+  wire status_text_active;
+  wire [5:0] status_character;
+  wire [3:0] status_glyph_x;
+  wire [3:0] status_glyph_y;
+
+  credits_bet status_unit (
+      .clk(status_clk), .rst_n(status_rst_n), .x(status_x), .y(status_y),
+      .balance(status_balance), .state(status_state), .payout(status_payout),
+      .text_active(status_text_active),
+      .character(status_character), .glyph_x(status_glyph_x), .glyph_y(status_glyph_y)
+  );
+
+  reg [9:0] message_x;
+  reg [9:0] message_y;
+  reg [2:0] message_state;
+  reg [3:0] message_live_category;
+  reg [3:0] message_result_category;
+  wire message_active;
+  wire message_yellow;
+  wire [3:0] message_text_row;
+  wire [3:0] message_text_column;
+  wire [3:0] message_glyph_x;
+  wire [3:0] message_glyph_y;
+  wire [5:0] message_character;
+
+  hand_message message_unit (
+      .x(message_x), .y(message_y), .state(message_state),
+      .hand_category(message_live_category), .result_category(message_result_category),
+      .text_active(message_active), .yellow(message_yellow),
+      .text_row(message_text_row), .text_column(message_text_column),
+      .glyph_x(message_glyph_x), .glyph_y(message_glyph_y)
+  );
+  payout_characters message_words (
+      .numbers(1'b0), .text_row(message_text_row), .column(message_text_column),
+      .character(message_character)
+  );
+
   reg [9:0] card_x;
   reg [9:0] card_y;
   reg [29:0] card_values;
@@ -160,6 +204,7 @@ module tb ();
   wire [4:0] core_held_cards;
   wire [2:0] core_state;
   wire [15:0] core_balance;
+  wire [3:0] core_hand_category;
   wire [3:0] core_result_category;
   wire [11:0] core_result_payout;
   wire core_can_deal;
@@ -171,7 +216,7 @@ module tb ();
       .dealer_ready(core_dealer_ready), .cards(core_cards),
       .dealt_mask(core_dealt_mask), .held_cards(core_held_cards),
       .state(core_state), .balance(core_balance),
-      .result_category(core_result_category), .result_payout(core_result_payout),
+      .hand_category(core_hand_category), .result_category(core_result_category), .result_payout(core_result_payout),
       .can_deal(core_can_deal)
   );
 

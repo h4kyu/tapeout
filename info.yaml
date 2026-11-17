@@ -28,7 +28,9 @@ project:
     - "font_rom.v"
     - "payout_table.v"
     - "hold_labels.v"
+    - "credits_bet.v"
     - "payout_characters.v"
+    - "hand_message.v"
     - "card_faces.v"
 
 # The pinout of your project. Leave unused pins blank. DO NOT delete or add any pins.

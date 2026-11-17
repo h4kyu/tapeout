@@ -14,6 +14,7 @@ module poker_core (
     output reg [4:0] held_cards,
     output reg [2:0] state,
     output reg [15:0] balance,
+    output wire [3:0] hand_category,
     output reg [3:0] result_category,
     output reg [11:0] result_payout,
     output wire can_deal
@@ -29,6 +30,8 @@ module poker_core (
     wire dealer_done;
     wire [3:0] category;
     wire [11:0] payout;
+    // Expose the existing evaluator for live display; no second evaluator.
+    assign hand_category = category;
     wire [16:0] credited_balance = {1'b0, balance} + {5'b0, payout};
     assign can_deal = (state == IDLE || state == RESULT) && balance >= 16'd5;
     wire start_deal = deal_draw_pulse && can_deal;
