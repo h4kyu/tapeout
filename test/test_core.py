@@ -198,7 +198,17 @@ async def evaluator_categories_and_reference(dut):
         ([2, 2, 3, 4, 5], 0),
         ([0, 3, 4, 5, 6], 0),
         ([15, 3, 4, 5, 6], 0),
+        ([1, 3, 4, 5, 6], 0),
+        ([10, 11, 12, 13, 13], 0),
+        ([7, 0x17, 0x27, 0x37, 7], 0),
     ]
+    # Preserve data coverage from the multicycle experiment for this
+    # combinational evaluator: every straight window and every flush suit.
+    for low in range(2, 11):
+        ranks = list(range(low, low + 5))
+        cases.append(([r | ((i % 4) << 4) for i, r in enumerate(ranks)], 4))
+        for suit in range(4):
+            cases.append(([r | (suit << 4) for r in ranks], 9 if low == 10 else 8))
     for cards, category in cases:
         for ordered in permutations(cards):
             dut.cards.value = pack(ordered)
@@ -208,6 +218,15 @@ async def evaluator_categories_and_reference(dut):
     rng = random.Random(298)
     for _ in range(3000):
         cards = rng.sample(DECK, 5)
+        category = reference(cards)
+        dut.cards.value = pack(cards)
+        await Timer(1, unit="ns")
+        assert int(dut.category.value) == category, cards
+        assert int(dut.payout.value) == PAYOUTS[category], cards
+
+    # Include invalid ranks and repeated cards across all six-bit encodings.
+    for _ in range(1000):
+        cards = [rng.randrange(64) for _ in range(5)]
         category = reference(cards)
         dut.cards.value = pack(cards)
         await Timer(1, unit="ns")
