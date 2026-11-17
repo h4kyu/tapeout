@@ -60,6 +60,10 @@ The evaluator is combinational, so the controller's EVALUATE state supplies a fu
 
 Reset restores 100 credits and clears all hand, deck and result state. Initial dealing ignores hold switches. Hold-all draws complete without consuming any candidate. Each new deal clears the previous result and used-card mask.
 
+The core stores only the final category and derives `result_payout` from it
+with a combinational fixed-award lookup, avoiding a separate 12-bit payout
+register. Balance crediting still uses the evaluator's payout in EVALUATE.
+
 The award is added after the wager has already been deducted. Balance saturates at 65,535 instead of wrapping. Below five credits, new-deal actions do nothing, reset starts a new session. Behavior can be adjusted independently of the dealer later.
 
 | Category | Code | Award |
