@@ -53,7 +53,12 @@ They test the controller, dealer, and evaluator with deterministic card candidat
 without requiring a PRNG or VGA implementation. Tests include a basic complete
 round, hold switches changing independently of Deal/Draw, hand categories and
 payouts, invalid and duplicate cards, all hold masks, balance limits, and reset.
-The suite also compares 3,000 random hands with a Python reference evaluator.
+The suite also compares 3,000 random valid hands and 1,000 raw encoded hands
+with a Python reference evaluator, and checks every straight window with card
+permutations. Independent regressions cover all 52 valid and 12 invalid card
+codes, ten-card history rejection and reuse in the next round, wager and payout
+boundaries, and every displayed payout with reset/new-deal clearing. All 18 tests
+are imported by `test.py`, including tests retained from rejected experiments.
 Results for the combined suite are written to `results.xml` by the existing CI
 test step. In gate-level simulation, these standalone units use RTL, just like
 the standalone debounce unit.

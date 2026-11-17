@@ -1,0 +1,1052 @@
+{
+  "schema_version": 1,
+  "clock_period_ns": 40,
+  "tile": "1x1",
+  "pdk": "gf180mcuD",
+  "pdk_revision": "54435919abffb937387ec956209f9cf5fd2dfbee",
+  "standard_cell_library": "gf180mcu_fd_sc_mcu7t5v0",
+  "workflow_ref": "TinyTapeout/tt-gds-action@ttgf26a",
+  "selected_rtl_revision": "dea1a33b0c1576a22807f603ac93dbc7572f5d05",
+  "selected_implementations": [
+    "fab934a",
+    "db260f4",
+    "b88aa25",
+    "36d6d17"
+  ],
+  "excluded_implementations": [
+    "08788d4",
+    "e6e9840",
+    "956ad73"
+  ],
+  "cell_metric": "design__instance__count__class:standard_cell",
+  "placement_metric": "GPL-0019 Utilization (global placement)",
+  "runs": [
+    {
+      "app": "Tiny Tapeout main 8f7b5060",
+      "repo": "https://github.com/h4kyu/tapeout",
+      "commit": "989fd403f522fca3180f3ff7ca230e75c1f2391c",
+      "workflow_url": "https://github.com/h4kyu/tapeout/actions/runs/43896181617",
+      "placement_utilization_pct": 68.086,
+      "cells_excluding_fill_tap": 1462,
+      "wire_length_um": 66630,
+      "worst_setup_slack_ns": -6.295366184315457,
+      "worst_hold_slack_ns": 0.2270390606447132,
+      "nominal_setup_slack_ns": 17.461192097565515,
+      "nominal_hold_slack_ns": 0.5998695043819949,
+      "all_setup_corners_ns": {
+        "nom_tt_025C_3v30": 17.461192097565515,
+        "nom_ss_125C_3v00": -5.192621590796429,
+        "nom_ff_n40C_3v60": 26.303955313966085,
+        "min_tt_025C_3v30": 17.935850645689076,
+        "min_ss_125C_3v00": -4.278952424610581,
+        "min_ff_n40C_3v60": 26.5227882719145,
+        "max_tt_025C_3v30": 16.88948939620408,
+        "max_ss_125C_3v00": -6.295366184315457,
+        "max_ff_n40C_3v60": 26.04320743884975
+      },
+      "all_hold_corners_ns": {
+        "nom_tt_025C_3v30": 0.5998695043819949,
+        "nom_ss_125C_3v00": 1.5022685742815274,
+        "nom_ff_n40C_3v60": 0.22875202379785325,
+        "min_tt_025C_3v30": 0.596992250310002,
+        "min_ss_125C_3v00": 1.4961954321204627,
+        "min_ff_n40C_3v60": 0.2270390606447132,
+        "max_tt_025C_3v30": 0.6033145265248386,
+        "max_ss_125C_3v00": 1.5088073439922889,
+        "max_ff_n40C_3v60": 0.23080327191616395
+      },
+      "stage": "baseline",
+      "label": "Baseline",
+      "gds_ci": {
+        "status": "completed",
+        "conclusion": "success",
+        "jobs": [
+          {
+            "name": "gds",
+            "status": "completed",
+            "conclusion": "success",
+            "url": "https://github.com/h4kyu/tapeout/actions/runs/43896181617/job/133400233548",
+            "started_at": "2026-11-16T15:25:36Z",
+            "completed_at": "2026-11-16T15:29:30Z"
+          },
+          {
+            "name": "precheck",
+            "status": "completed",
+            "conclusion": "success",
+            "url": "https://github.com/h4kyu/tapeout/actions/runs/43896181617/job/133402818713",
+            "started_at": "2026-11-16T15:29:32Z",
+            "completed_at": "2026-11-16T15:31:57Z"
+          },
+          {
+            "name": "gl_test",
+            "status": "completed",
+            "conclusion": "success",
+            "url": "https://github.com/h4kyu/tapeout/actions/runs/43896181617/job/133402818824",
+            "started_at": "2026-11-16T15:29:32Z",
+            "completed_at": "2026-11-16T15:30:10Z"
+          },
+          {
+            "name": "viewer",
+            "status": "completed",
+            "conclusion": "success",
+            "url": "https://github.com/h4kyu/tapeout/actions/runs/43896181617/job/133402818926",
+            "started_at": "2026-11-16T15:29:33Z",
+            "completed_at": "2026-11-16T15:30:00Z"
+          }
+        ]
+      },
+      "workflows": [
+        {
+          "name": "test",
+          "run_id": 43896181737,
+          "status": "completed",
+          "conclusion": "success",
+          "url": "https://github.com/h4kyu/tapeout/actions/runs/43896181737"
+        },
+        {
+          "name": "docs",
+          "run_id": 43896181601,
+          "status": "completed",
+          "conclusion": "success",
+          "url": "https://github.com/h4kyu/tapeout/actions/runs/43896181601"
+        },
+        {
+          "name": "test",
+          "run_id": 43894919567,
+          "status": "completed",
+          "conclusion": "success",
+          "url": "https://github.com/h4kyu/tapeout/actions/runs/43894919567"
+        },
+        {
+          "name": "docs",
+          "run_id": 43894919784,
+          "status": "completed",
+          "conclusion": "success",
+          "url": "https://github.com/h4kyu/tapeout/actions/runs/43894919784"
+        }
+      ],
+      "rtl_suite_tests": 14
+    },
+    {
+      "app": "Tiny Tapeout main 8f7b5060",
+      "repo": "https://github.com/h4kyu/tapeout",
+      "commit": "fab934a9546965dc1e4da08a375f3bd9131ab5d8",
+      "workflow_url": "https://github.com/h4kyu/tapeout/actions/runs/43902056794",
+      "placement_utilization_pct": 64.121,
+      "cells_excluding_fill_tap": 1320,
+      "wire_length_um": 53934,
+      "worst_setup_slack_ns": -4.80879349951078,
+      "worst_hold_slack_ns": 0.24032843062532536,
+      "nominal_setup_slack_ns": 18.223854940920035,
+      "nominal_hold_slack_ns": 0.6223843838689475,
+      "all_setup_corners_ns": {
+        "nom_tt_025C_3v30": 18.223854940920035,
+        "nom_ss_125C_3v00": -3.906187484033605,
+        "nom_ff_n40C_3v60": 25.909307432865646,
+        "min_tt_025C_3v30": 18.608759504480805,
+        "min_ss_125C_3v00": -3.1531613768053752,
+        "min_ff_n40C_3v60": 26.00839617288349,
+        "max_tt_025C_3v30": 17.70284413611823,
+        "max_ss_125C_3v00": -4.80879349951078,
+        "max_ff_n40C_3v60": 25.789479726161264
+      },
+      "all_hold_corners_ns": {
+        "nom_tt_025C_3v30": 0.6223843838689475,
+        "nom_ss_125C_3v00": 1.541375959385376,
+        "nom_ff_n40C_3v60": 0.24329428049718896,
+        "min_tt_025C_3v30": 0.617603874412012,
+        "min_ss_125C_3v00": 1.5326595981725284,
+        "min_ff_n40C_3v60": 0.24032843062532536,
+        "max_tt_025C_3v30": 0.6280298681088317,
+        "max_ss_125C_3v00": 1.5516668389362775,
+        "max_ff_n40C_3v60": 0.24679481379283394
+      },
+      "stage": "fixed-slots",
+      "label": "Fixed slots (standalone reference)",
+      "gds_ci": {
+        "status": "completed",
+        "conclusion": "success",
+        "jobs": [
+          {
+            "name": "gds",
+            "status": "completed",
+            "conclusion": "success",
+            "url": "https://github.com/h4kyu/tapeout/actions/runs/43902056794/job/133420960303",
+            "started_at": "2026-11-16T15:57:13Z",
+            "completed_at": "2026-11-16T16:01:51Z"
+          },
+          {
+            "name": "precheck",
+            "status": "completed",
+            "conclusion": "success",
+            "url": "https://github.com/h4kyu/tapeout/actions/runs/43902056794/job/133424027034",
+            "started_at": "2026-11-16T16:01:53Z",
+            "completed_at": "2026-11-16T16:04:25Z"
+          },
+          {
+            "name": "viewer",
+            "status": "completed",
+            "conclusion": "success",
+            "url": "https://github.com/h4kyu/tapeout/actions/runs/43902056794/job/133424027038",
+            "started_at": "2026-11-16T16:01:54Z",
+            "completed_at": "2026-11-16T16:02:13Z"
+          },
+          {
+            "name": "gl_test",
+            "status": "completed",
+            "conclusion": "success",
+            "url": "https://github.com/h4kyu/tapeout/actions/runs/43902056794/job/133424029467",
+            "started_at": "2026-11-16T16:01:54Z",
+            "completed_at": "2026-11-16T16:03:00Z"
+          }
+        ]
+      },
+      "workflows": [
+        {
+          "name": "test",
+          "run_id": 43902056747,
+          "status": "completed",
+          "conclusion": "success",
+          "url": "https://github.com/h4kyu/tapeout/actions/runs/43902056747"
+        },
+        {
+          "name": "docs",
+          "run_id": 43902056694,
+          "status": "completed",
+          "conclusion": "success",
+          "url": "https://github.com/h4kyu/tapeout/actions/runs/43902056694"
+        }
+      ],
+      "rtl_suite_tests": 14
+    },
+    {
+      "app": "Tiny Tapeout main 8f7b5060",
+      "repo": "https://github.com/h4kyu/tapeout",
+      "commit": "9357a1f7e4e4064de2e5c506ec1f9314f998c0b2",
+      "workflow_url": "https://github.com/h4kyu/tapeout/actions/runs/44135352831",
+      "placement_utilization_pct": 64.966,
+      "cells_excluding_fill_tap": 1386,
+      "wire_length_um": 75221,
+      "worst_setup_slack_ns": -9.73614105783607,
+      "worst_hold_slack_ns": 0.2234875681107967,
+      "nominal_setup_slack_ns": 15.771928209868573,
+      "nominal_hold_slack_ns": 0.5948774974328868,
+      "all_setup_corners_ns": {
+        "nom_tt_025C_3v30": 15.771928209868573,
+        "nom_ss_125C_3v00": -8.186550336014559,
+        "nom_ff_n40C_3v60": 25.946364013940403,
+        "min_tt_025C_3v30": 16.435971271424112,
+        "min_ss_125C_3v00": -6.915950674565978,
+        "min_ff_n40C_3v60": 26.355821382429767,
+        "max_tt_025C_3v30": 14.939026438740834,
+        "max_ss_125C_3v00": -9.73614105783607,
+        "max_ff_n40C_3v60": 25.412472845331827
+      },
+      "all_hold_corners_ns": {
+        "nom_tt_025C_3v30": 0.5948774974328868,
+        "nom_ss_125C_3v00": 1.4939272464170048,
+        "nom_ff_n40C_3v60": 0.22457858430795188,
+        "min_tt_025C_3v30": 0.5928151470840158,
+        "min_ss_125C_3v00": 1.4898311894741085,
+        "min_ff_n40C_3v60": 0.2234875681107967,
+        "max_tt_025C_3v30": 0.597246935479054,
+        "max_ss_125C_3v00": 1.4986130538472615,
+        "max_ff_n40C_3v60": 0.22583280329434266
+      },
+      "stage": "stage-a",
+      "label": "A: fixed slots + shared ranks",
+      "gds_ci": {
+        "status": "completed",
+        "conclusion": "success",
+        "jobs": [
+          {
+            "name": "gds",
+            "status": "completed",
+            "conclusion": "success",
+            "url": "https://github.com/h4kyu/tapeout/actions/runs/44135352831/job/134223254050",
+            "started_at": "2026-11-17T17:17:35Z",
+            "completed_at": "2026-11-17T17:22:17Z"
+          },
+          {
+            "name": "viewer",
+            "status": "completed",
+            "conclusion": "success",
+            "url": "https://github.com/h4kyu/tapeout/actions/runs/44135352831/job/134226399840",
+            "started_at": "2026-11-17T17:22:20Z",
+            "completed_at": "2026-11-17T17:22:45Z"
+          },
+          {
+            "name": "precheck",
+            "status": "completed",
+            "conclusion": "success",
+            "url": "https://github.com/h4kyu/tapeout/actions/runs/44135352831/job/134226399901",
+            "started_at": "2026-11-17T17:22:19Z",
+            "completed_at": "2026-11-17T17:24:49Z"
+          },
+          {
+            "name": "gl_test",
+            "status": "completed",
+            "conclusion": "success",
+            "url": "https://github.com/h4kyu/tapeout/actions/runs/44135352831/job/134226399939",
+            "started_at": "2026-11-17T17:22:19Z",
+            "completed_at": "2026-11-17T17:23:10Z"
+          }
+        ]
+      },
+      "workflows": [
+        {
+          "name": "docs",
+          "run_id": 44135352811,
+          "status": "completed",
+          "conclusion": "success",
+          "url": "https://github.com/h4kyu/tapeout/actions/runs/44135352811"
+        },
+        {
+          "name": "test",
+          "run_id": 44135352792,
+          "status": "completed",
+          "conclusion": "success",
+          "url": "https://github.com/h4kyu/tapeout/actions/runs/44135352792"
+        }
+      ],
+      "rtl_suite_tests": 14
+    },
+    {
+      "app": "Tiny Tapeout main 8f7b5060",
+      "repo": "https://github.com/h4kyu/tapeout",
+      "commit": "c9c6130f89bdc6e31e8436e8a605f4b764414c7e",
+      "workflow_url": "https://github.com/h4kyu/tapeout/actions/runs/44135828537",
+      "placement_utilization_pct": 61.988,
+      "cells_excluding_fill_tap": 1267,
+      "wire_length_um": 47352,
+      "worst_setup_slack_ns": -2.3785738496507074,
+      "worst_hold_slack_ns": 0.21977331687686705,
+      "nominal_setup_slack_ns": 19.302703981559638,
+      "nominal_hold_slack_ns": 0.5853404593370258,
+      "all_setup_corners_ns": {
+        "nom_tt_025C_3v30": 19.302703981559638,
+        "nom_ss_125C_3v00": -1.6170105712108724,
+        "nom_ff_n40C_3v60": 24.810513457069174,
+        "min_tt_025C_3v30": 19.69975527353176,
+        "min_ss_125C_3v00": -0.998728239489324,
+        "min_ff_n40C_3v60": 24.971032171044516,
+        "max_tt_025C_3v30": 18.819140556348316,
+        "max_ss_125C_3v00": -2.3785738496507074,
+        "max_ff_n40C_3v60": 24.619352586747556
+      },
+      "all_hold_corners_ns": {
+        "nom_tt_025C_3v30": 0.5853404593370258,
+        "nom_ss_125C_3v00": 1.474666652751871,
+        "nom_ff_n40C_3v60": 0.2200938382731413,
+        "min_tt_025C_3v30": 0.5847842375859577,
+        "min_ss_125C_3v00": 1.4728998437805139,
+        "min_ff_n40C_3v60": 0.21977331687686705,
+        "max_tt_025C_3v30": 0.5860379014608204,
+        "max_ss_125C_3v00": 1.4759938133930426,
+        "max_ff_n40C_3v60": 0.22049651617556135
+      },
+      "stage": "stage-b",
+      "label": "B: A + used-card list",
+      "gds_ci": {
+        "status": "completed",
+        "conclusion": "success",
+        "jobs": [
+          {
+            "name": "gds",
+            "status": "completed",
+            "conclusion": "success",
+            "url": "https://github.com/h4kyu/tapeout/actions/runs/44135828537/job/134224973725",
+            "started_at": "2026-11-17T17:20:10Z",
+            "completed_at": "2026-11-17T17:23:57Z"
+          },
+          {
+            "name": "gl_test",
+            "status": "completed",
+            "conclusion": "success",
+            "url": "https://github.com/h4kyu/tapeout/actions/runs/44135828537/job/134227498155",
+            "started_at": "2026-11-17T17:24:00Z",
+            "completed_at": "2026-11-17T17:25:23Z"
+          },
+          {
+            "name": "precheck",
+            "status": "completed",
+            "conclusion": "success",
+            "url": "https://github.com/h4kyu/tapeout/actions/runs/44135828537/job/134227498165",
+            "started_at": "2026-11-17T17:24:00Z",
+            "completed_at": "2026-11-17T17:26:20Z"
+          },
+          {
+            "name": "viewer",
+            "status": "completed",
+            "conclusion": "success",
+            "url": "https://github.com/h4kyu/tapeout/actions/runs/44135828537/job/134227498643",
+            "started_at": "2026-11-17T17:24:00Z",
+            "completed_at": "2026-11-17T17:24:25Z"
+          }
+        ]
+      },
+      "workflows": [
+        {
+          "name": "test",
+          "run_id": 44135828195,
+          "status": "completed",
+          "conclusion": "success",
+          "url": "https://github.com/h4kyu/tapeout/actions/runs/44135828195"
+        },
+        {
+          "name": "docs",
+          "run_id": 44135828214,
+          "status": "completed",
+          "conclusion": "success",
+          "url": "https://github.com/h4kyu/tapeout/actions/runs/44135828214"
+        }
+      ],
+      "rtl_suite_tests": 17
+    },
+    {
+      "app": "Tiny Tapeout main 8f7b5060",
+      "repo": "https://github.com/h4kyu/tapeout",
+      "commit": "c6623fccc7800b0e5f73419052b2c656d79897fe",
+      "workflow_url": "https://github.com/h4kyu/tapeout/actions/runs/44136699530",
+      "placement_utilization_pct": 61.863,
+      "cells_excluding_fill_tap": 1263,
+      "wire_length_um": 49658,
+      "worst_setup_slack_ns": -4.5282605613576425,
+      "worst_hold_slack_ns": 0.2198115085499943,
+      "nominal_setup_slack_ns": 14.646579474928888,
+      "nominal_hold_slack_ns": 0.585426168556951,
+      "all_setup_corners_ns": {
+        "nom_tt_025C_3v30": 14.646579474928888,
+        "nom_ss_125C_3v00": -3.650825523006653,
+        "nom_ff_n40C_3v60": 22.023866020946134,
+        "min_tt_025C_3v30": 14.925535008164026,
+        "min_ss_125C_3v00": -2.9413734502812696,
+        "min_ff_n40C_3v60": 22.193058685613586,
+        "max_tt_025C_3v30": 14.313617363178054,
+        "max_ss_125C_3v00": -4.5282605613576425,
+        "max_ff_n40C_3v60": 21.82155495842825
+      },
+      "all_hold_corners_ns": {
+        "nom_tt_025C_3v30": 0.585426168556951,
+        "nom_ss_125C_3v00": 1.4745423077695963,
+        "nom_ff_n40C_3v60": 0.2201303646116845,
+        "min_tt_025C_3v30": 0.5848559579953768,
+        "min_ss_125C_3v00": 1.47352201278111,
+        "min_ff_n40C_3v60": 0.2198115085499943,
+        "max_tt_025C_3v30": 0.5861162832085757,
+        "max_ss_125C_3v00": 1.4758095163657425,
+        "max_ff_n40C_3v60": 0.22052649219807402
+      },
+      "stage": "stage-c",
+      "label": "C: B + shared adder (excluded)",
+      "gds_ci": {
+        "status": "completed",
+        "conclusion": "success",
+        "jobs": [
+          {
+            "name": "gds",
+            "status": "completed",
+            "conclusion": "success",
+            "url": "https://github.com/h4kyu/tapeout/actions/runs/44136699530/job/134228065085",
+            "started_at": "2026-11-17T17:24:51Z",
+            "completed_at": "2026-11-17T17:30:01Z"
+          },
+          {
+            "name": "precheck",
+            "status": "completed",
+            "conclusion": "success",
+            "url": "https://github.com/h4kyu/tapeout/actions/runs/44136699530/job/134231467843",
+            "started_at": "2026-11-17T17:30:04Z",
+            "completed_at": "2026-11-17T17:32:19Z"
+          },
+          {
+            "name": "viewer",
+            "status": "completed",
+            "conclusion": "success",
+            "url": "https://github.com/h4kyu/tapeout/actions/runs/44136699530/job/134231467845",
+            "started_at": "2026-11-17T17:30:04Z",
+            "completed_at": "2026-11-17T17:30:30Z"
+          },
+          {
+            "name": "gl_test",
+            "status": "completed",
+            "conclusion": "success",
+            "url": "https://github.com/h4kyu/tapeout/actions/runs/44136699530/job/134231467915",
+            "started_at": "2026-11-17T17:30:03Z",
+            "completed_at": "2026-11-17T17:30:58Z"
+          }
+        ]
+      },
+      "workflows": [
+        {
+          "name": "test",
+          "run_id": 44136699504,
+          "status": "completed",
+          "conclusion": "success",
+          "url": "https://github.com/h4kyu/tapeout/actions/runs/44136699504"
+        },
+        {
+          "name": "docs",
+          "run_id": 44136699605,
+          "status": "completed",
+          "conclusion": "success",
+          "url": "https://github.com/h4kyu/tapeout/actions/runs/44136699605"
+        }
+      ],
+      "rtl_suite_tests": 17
+    },
+    {
+      "app": "Tiny Tapeout main 8f7b5060",
+      "repo": "https://github.com/h4kyu/tapeout",
+      "commit": "dea1a33b0c1576a22807f603ac93dbc7572f5d05",
+      "workflow_url": "https://github.com/h4kyu/tapeout/actions/runs/44137624373",
+      "placement_utilization_pct": 63.129,
+      "cells_excluding_fill_tap": 1300,
+      "wire_length_um": 56415,
+      "worst_setup_slack_ns": -4.760640016946445,
+      "worst_hold_slack_ns": 0.21322277880171184,
+      "nominal_setup_slack_ns": 16.571182228792768,
+      "nominal_hold_slack_ns": 0.576433139758542,
+      "all_setup_corners_ns": {
+        "nom_tt_025C_3v30": 16.571182228792768,
+        "nom_ss_125C_3v00": -3.7243382765274755,
+        "nom_ff_n40C_3v60": 23.194558041850748,
+        "min_tt_025C_3v30": 16.834091930243797,
+        "min_ss_125C_3v00": -2.856687411924617,
+        "min_ff_n40C_3v60": 23.35443726734582,
+        "max_tt_025C_3v30": 16.261319862034803,
+        "max_ss_125C_3v00": -4.760640016946445,
+        "max_ff_n40C_3v60": 23.00492128574044
+      },
+      "all_hold_corners_ns": {
+        "nom_tt_025C_3v30": 0.576433139758542,
+        "nom_ss_125C_3v00": 1.4576109620760016,
+        "nom_ff_n40C_3v60": 0.2137849957572826,
+        "min_tt_025C_3v30": 0.5771889796150834,
+        "min_ss_125C_3v00": 1.45906468814556,
+        "min_ff_n40C_3v60": 0.21433821990609955,
+        "max_tt_025C_3v30": 0.5757274819841329,
+        "max_ss_125C_3v00": 1.455966055596196,
+        "max_ff_n40C_3v60": 0.21322277880171184
+      },
+      "stage": "stage-d",
+      "label": "D: B + derived payout (selected)",
+      "gds_ci": {
+        "status": "completed",
+        "conclusion": "success",
+        "jobs": [
+          {
+            "name": "gds",
+            "status": "completed",
+            "conclusion": "success",
+            "url": "https://github.com/h4kyu/tapeout/actions/runs/44137624373/job/134231422328",
+            "started_at": "2026-11-17T17:30:00Z",
+            "completed_at": "2026-11-17T17:34:30Z"
+          },
+          {
+            "name": "precheck",
+            "status": "completed",
+            "conclusion": "success",
+            "url": "https://github.com/h4kyu/tapeout/actions/runs/44137624373/job/134234442853",
+            "started_at": "2026-11-17T17:34:32Z",
+            "completed_at": "2026-11-17T17:37:06Z"
+          },
+          {
+            "name": "viewer",
+            "status": "completed",
+            "conclusion": "success",
+            "url": "https://github.com/h4kyu/tapeout/actions/runs/44137624373/job/134234442960",
+            "started_at": "2026-11-17T17:34:32Z",
+            "completed_at": "2026-11-17T17:34:45Z"
+          },
+          {
+            "name": "gl_test",
+            "status": "completed",
+            "conclusion": "success",
+            "url": "https://github.com/h4kyu/tapeout/actions/runs/44137624373/job/134234442987",
+            "started_at": "2026-11-17T17:34:32Z",
+            "completed_at": "2026-11-17T17:35:34Z"
+          }
+        ]
+      },
+      "workflows": [
+        {
+          "name": "test",
+          "run_id": 44137623912,
+          "status": "completed",
+          "conclusion": "success",
+          "url": "https://github.com/h4kyu/tapeout/actions/runs/44137623912"
+        },
+        {
+          "name": "docs",
+          "run_id": 44137623975,
+          "status": "completed",
+          "conclusion": "success",
+          "url": "https://github.com/h4kyu/tapeout/actions/runs/44137623975"
+        }
+      ],
+      "rtl_suite_tests": 18
+    },
+    {
+      "app": "Tiny Tapeout main 8f7b5060",
+      "repo": "https://github.com/h4kyu/tapeout",
+      "commit": "9451a78198fb767a9ab8dda504b7209f3d46a609",
+      "workflow_url": "https://github.com/h4kyu/tapeout/actions/runs/43894926379",
+      "placement_utilization_pct": 75.354,
+      "cells_excluding_fill_tap": 1546,
+      "wire_length_um": 90701,
+      "worst_setup_slack_ns": -11.455331230052762,
+      "worst_hold_slack_ns": 0.22092084342757387,
+      "nominal_setup_slack_ns": 15.114015355939177,
+      "nominal_hold_slack_ns": 0.5885316844892624,
+      "all_setup_corners_ns": {
+        "nom_tt_025C_3v30": 15.114015355939177,
+        "nom_ss_125C_3v00": -9.513019974356068,
+        "nom_ff_n40C_3v60": 25.640271076502252,
+        "min_tt_025C_3v30": 15.958205875100573,
+        "min_ss_125C_3v00": -7.920281543685223,
+        "min_ff_n40C_3v60": 25.943440130500058,
+        "max_tt_025C_3v30": 14.101255673378594,
+        "max_ss_125C_3v00": -11.455331230052762,
+        "max_ff_n40C_3v60": 25.036732506964707
+      },
+      "all_hold_corners_ns": {
+        "nom_tt_025C_3v30": 0.5885316844892624,
+        "nom_ss_125C_3v00": 1.480877684616494,
+        "nom_ff_n40C_3v60": 0.22155644612714784,
+        "min_tt_025C_3v30": 0.587382381581666,
+        "min_ss_125C_3v00": 1.4786770004748424,
+        "min_ff_n40C_3v60": 0.22092084342757387,
+        "max_tt_025C_3v30": 0.5899298994060196,
+        "max_ss_125C_3v00": 1.4835517678692345,
+        "max_ff_n40C_3v60": 0.22233171488716968
+      },
+      "stage": "vga-baseline",
+      "label": "Retained VGA baseline",
+      "gds_ci": {
+        "status": "completed",
+        "conclusion": "success",
+        "jobs": [
+          {
+            "name": "gds",
+            "status": "completed",
+            "conclusion": "success",
+            "url": "https://github.com/h4kyu/tapeout/actions/runs/43894926379/job/133395764813",
+            "started_at": "2026-11-16T15:18:35Z",
+            "completed_at": "2026-11-16T15:24:44Z"
+          },
+          {
+            "name": "viewer",
+            "status": "completed",
+            "conclusion": "success",
+            "url": "https://github.com/h4kyu/tapeout/actions/runs/43894926379/job/133399686774",
+            "started_at": "2026-11-16T15:24:47Z",
+            "completed_at": "2026-11-16T15:25:00Z"
+          },
+          {
+            "name": "precheck",
+            "status": "completed",
+            "conclusion": "success",
+            "url": "https://github.com/h4kyu/tapeout/actions/runs/43894926379/job/133399686867",
+            "started_at": "2026-11-16T15:24:47Z",
+            "completed_at": "2026-11-16T15:27:20Z"
+          },
+          {
+            "name": "gl_test",
+            "status": "completed",
+            "conclusion": "success",
+            "url": "https://github.com/h4kyu/tapeout/actions/runs/43894926379/job/133399686979",
+            "started_at": "2026-11-16T15:24:46Z",
+            "completed_at": "2026-11-16T15:25:25Z"
+          }
+        ]
+      },
+      "workflows": [
+        {
+          "name": "docs",
+          "run_id": 43894926314,
+          "status": "completed",
+          "conclusion": "success",
+          "url": "https://github.com/h4kyu/tapeout/actions/runs/43894926314"
+        },
+        {
+          "name": "test",
+          "run_id": 43894926224,
+          "status": "completed",
+          "conclusion": "success",
+          "url": "https://github.com/h4kyu/tapeout/actions/runs/43894926224"
+        }
+      ],
+      "rtl_suite_tests": 14
+    },
+    {
+      "app": "Tiny Tapeout main 8f7b5060",
+      "repo": "https://github.com/h4kyu/tapeout",
+      "commit": "6d29967b1e27889d1a4729e43cbd510c37597112",
+      "workflow_url": "https://github.com/h4kyu/tapeout/actions/runs/44137871013",
+      "placement_utilization_pct": 73.711,
+      "cells_excluding_fill_tap": 1507,
+      "wire_length_um": 82051,
+      "worst_setup_slack_ns": -8.834654147199368,
+      "worst_hold_slack_ns": 0.24956248884919718,
+      "nominal_setup_slack_ns": 16.42131277437081,
+      "nominal_hold_slack_ns": 0.6415679280539932,
+      "all_setup_corners_ns": {
+        "nom_tt_025C_3v30": 16.42131277437081,
+        "nom_ss_125C_3v00": -6.73074770525221,
+        "nom_ff_n40C_3v60": 25.92763410689605,
+        "min_tt_025C_3v30": 17.3294539179161,
+        "min_ss_125C_3v00": -4.97282584741383,
+        "min_ff_n40C_3v60": 26.057873041330605,
+        "max_tt_025C_3v30": 15.333194703481071,
+        "max_ss_125C_3v00": -8.834654147199368,
+        "max_ff_n40C_3v60": 25.7034756309925
+      },
+      "all_hold_corners_ns": {
+        "nom_tt_025C_3v30": 0.6415679280539932,
+        "nom_ss_125C_3v00": 1.5796135957471351,
+        "nom_ff_n40C_3v60": 0.25385527731762114,
+        "min_tt_025C_3v30": 0.6348171057395312,
+        "min_ss_125C_3v00": 1.5669457286332855,
+        "min_ff_n40C_3v60": 0.24956248884919718,
+        "max_tt_025C_3v30": 0.6500746791538635,
+        "max_ss_125C_3v00": 1.5952384309484002,
+        "max_ff_n40C_3v60": 0.2588720422408787
+      },
+      "stage": "vga-a",
+      "label": "Retained VGA A",
+      "gds_ci": {
+        "status": "completed",
+        "conclusion": "success",
+        "jobs": [
+          {
+            "name": "gds",
+            "status": "completed",
+            "conclusion": "success",
+            "url": "https://github.com/h4kyu/tapeout/actions/runs/44137871013/job/134232269041",
+            "started_at": "2026-11-17T17:31:14Z",
+            "completed_at": "2026-11-17T17:36:32Z"
+          },
+          {
+            "name": "gl_test",
+            "status": "completed",
+            "conclusion": "success",
+            "url": "https://github.com/h4kyu/tapeout/actions/runs/44137871013/job/134235779223",
+            "started_at": "2026-11-17T17:36:35Z",
+            "completed_at": "2026-11-17T17:37:52Z"
+          },
+          {
+            "name": "viewer",
+            "status": "completed",
+            "conclusion": "success",
+            "url": "https://github.com/h4kyu/tapeout/actions/runs/44137871013/job/134235779256",
+            "started_at": "2026-11-17T17:36:34Z",
+            "completed_at": "2026-11-17T17:36:50Z"
+          },
+          {
+            "name": "precheck",
+            "status": "completed",
+            "conclusion": "success",
+            "url": "https://github.com/h4kyu/tapeout/actions/runs/44137871013/job/134235779819",
+            "started_at": "2026-11-17T17:36:34Z",
+            "completed_at": "2026-11-17T17:39:14Z"
+          }
+        ]
+      },
+      "workflows": [
+        {
+          "name": "test",
+          "run_id": 44137870761,
+          "status": "completed",
+          "conclusion": "success",
+          "url": "https://github.com/h4kyu/tapeout/actions/runs/44137870761"
+        },
+        {
+          "name": "docs",
+          "run_id": 44137870699,
+          "status": "completed",
+          "conclusion": "success",
+          "url": "https://github.com/h4kyu/tapeout/actions/runs/44137870699"
+        }
+      ],
+      "rtl_suite_tests": 16
+    },
+    {
+      "app": "Tiny Tapeout main 8f7b5060",
+      "repo": "https://github.com/h4kyu/tapeout",
+      "commit": "70cafac1b6dfa335d5c4d9053e3bc6882e22e355",
+      "workflow_url": "https://github.com/h4kyu/tapeout/actions/runs/44136852638",
+      "placement_utilization_pct": 70.813,
+      "cells_excluding_fill_tap": 1404,
+      "wire_length_um": 57171,
+      "worst_setup_slack_ns": -3.983171238916782,
+      "worst_hold_slack_ns": 0.21414737256276895,
+      "nominal_setup_slack_ns": 18.594845300964263,
+      "nominal_hold_slack_ns": 0.5767513296863986,
+      "all_setup_corners_ns": {
+        "nom_tt_025C_3v30": 18.594845300964263,
+        "nom_ss_125C_3v00": -3.259529627356962,
+        "nom_ff_n40C_3v60": 26.309776435493433,
+        "min_tt_025C_3v30": 18.91927201786038,
+        "min_ss_125C_3v00": -2.6370302243794104,
+        "min_ff_n40C_3v60": 26.473689767484874,
+        "max_tt_025C_3v30": 18.207578182740274,
+        "max_ss_125C_3v00": -3.983171238916782,
+        "max_ff_n40C_3v60": 26.11338419413183
+      },
+      "all_hold_corners_ns": {
+        "nom_tt_025C_3v30": 0.5767513296863986,
+        "nom_ss_125C_3v00": 1.4571166907714597,
+        "nom_ff_n40C_3v60": 0.21443314397738963,
+        "min_tt_025C_3v30": 0.5761724593849875,
+        "min_ss_125C_3v00": 1.4560346673810582,
+        "min_ff_n40C_3v60": 0.21414737256276895,
+        "max_tt_025C_3v30": 0.577150565897345,
+        "max_ss_125C_3v00": 1.4581172237895488,
+        "max_ff_n40C_3v60": 0.21466895535448924
+      },
+      "stage": "vga-b",
+      "label": "Retained VGA B",
+      "gds_ci": {
+        "status": "completed",
+        "conclusion": "success",
+        "jobs": [
+          {
+            "name": "gds",
+            "status": "completed",
+            "conclusion": "success",
+            "url": "https://github.com/h4kyu/tapeout/actions/runs/44136852638/job/134228612689",
+            "started_at": "2026-11-17T17:25:42Z",
+            "completed_at": "2026-11-17T17:29:51Z"
+          },
+          {
+            "name": "gl_test",
+            "status": "completed",
+            "conclusion": "success",
+            "url": "https://github.com/h4kyu/tapeout/actions/runs/44136852638/job/134231360884",
+            "started_at": "2026-11-17T17:29:54Z",
+            "completed_at": "2026-11-17T17:31:11Z"
+          },
+          {
+            "name": "viewer",
+            "status": "completed",
+            "conclusion": "success",
+            "url": "https://github.com/h4kyu/tapeout/actions/runs/44136852638/job/134231360912",
+            "started_at": "2026-11-17T17:29:53Z",
+            "completed_at": "2026-11-17T17:30:05Z"
+          },
+          {
+            "name": "precheck",
+            "status": "completed",
+            "conclusion": "success",
+            "url": "https://github.com/h4kyu/tapeout/actions/runs/44136852638/job/134231360978",
+            "started_at": "2026-11-17T17:29:54Z",
+            "completed_at": "2026-11-17T17:32:15Z"
+          }
+        ]
+      },
+      "workflows": [
+        {
+          "name": "docs",
+          "run_id": 44136852210,
+          "status": "completed",
+          "conclusion": "success",
+          "url": "https://github.com/h4kyu/tapeout/actions/runs/44136852210"
+        },
+        {
+          "name": "test",
+          "run_id": 44136852281,
+          "status": "completed",
+          "conclusion": "success",
+          "url": "https://github.com/h4kyu/tapeout/actions/runs/44136852281"
+        }
+      ],
+      "rtl_suite_tests": 17
+    },
+    {
+      "app": "Tiny Tapeout main 8f7b5060",
+      "repo": "https://github.com/h4kyu/tapeout",
+      "commit": "f4470f9a8f061daaf9c080ec47891b99bb33ca52",
+      "workflow_url": "https://github.com/h4kyu/tapeout/actions/runs/44137914884",
+      "placement_utilization_pct": 69.675,
+      "cells_excluding_fill_tap": 1382,
+      "wire_length_um": 57232,
+      "worst_setup_slack_ns": -3.9157656003825383,
+      "worst_hold_slack_ns": 0.23734048731464688,
+      "nominal_setup_slack_ns": 18.481050102257093,
+      "nominal_hold_slack_ns": 0.6166256568773489,
+      "all_setup_corners_ns": {
+        "nom_tt_025C_3v30": 18.481050102257093,
+        "nom_ss_125C_3v00": -2.7593395016586175,
+        "nom_ff_n40C_3v60": 24.63198248423289,
+        "min_tt_025C_3v30": 18.978708919387703,
+        "min_ss_125C_3v00": -2.056577188979615,
+        "min_ff_n40C_3v60": 24.770486807274935,
+        "max_tt_025C_3v30": 17.885252896044598,
+        "max_ss_125C_3v00": -3.9157656003825383,
+        "max_ff_n40C_3v60": 24.466099172450836
+      },
+      "all_hold_corners_ns": {
+        "nom_tt_025C_3v30": 0.6166256568773489,
+        "nom_ss_125C_3v00": 1.530370318231006,
+        "nom_ff_n40C_3v60": 0.23979174880004317,
+        "min_tt_025C_3v30": 0.6127605263301055,
+        "min_ss_125C_3v00": 1.5234460790751931,
+        "min_ff_n40C_3v60": 0.23734048731464688,
+        "max_tt_025C_3v30": 0.6214262613715984,
+        "max_ss_125C_3v00": 1.5390322785141086,
+        "max_ff_n40C_3v60": 0.2428088909770951
+      },
+      "stage": "vga-c",
+      "label": "Retained VGA C (candidate only)",
+      "gds_ci": {
+        "status": "completed",
+        "conclusion": "success",
+        "jobs": [
+          {
+            "name": "gds",
+            "status": "completed",
+            "conclusion": "success",
+            "url": "https://github.com/h4kyu/tapeout/actions/runs/44137914884/job/134232426419",
+            "started_at": "2026-11-17T17:31:28Z",
+            "completed_at": "2026-11-17T17:35:46Z"
+          },
+          {
+            "name": "gl_test",
+            "status": "completed",
+            "conclusion": "success",
+            "url": "https://github.com/h4kyu/tapeout/actions/runs/44137914884/job/134235287417",
+            "started_at": "2026-11-17T17:35:49Z",
+            "completed_at": "2026-11-17T17:37:09Z"
+          },
+          {
+            "name": "viewer",
+            "status": "completed",
+            "conclusion": "success",
+            "url": "https://github.com/h4kyu/tapeout/actions/runs/44137914884/job/134235287435",
+            "started_at": "2026-11-17T17:35:48Z",
+            "completed_at": "2026-11-17T17:36:04Z"
+          },
+          {
+            "name": "precheck",
+            "status": "completed",
+            "conclusion": "success",
+            "url": "https://github.com/h4kyu/tapeout/actions/runs/44137914884/job/134235287637",
+            "started_at": "2026-11-17T17:35:48Z",
+            "completed_at": "2026-11-17T17:38:05Z"
+          }
+        ]
+      },
+      "workflows": [
+        {
+          "name": "test",
+          "run_id": 44137914714,
+          "status": "completed",
+          "conclusion": "success",
+          "url": "https://github.com/h4kyu/tapeout/actions/runs/44137914714"
+        },
+        {
+          "name": "docs",
+          "run_id": 44137914818,
+          "status": "completed",
+          "conclusion": "success",
+          "url": "https://github.com/h4kyu/tapeout/actions/runs/44137914818"
+        }
+      ],
+      "rtl_suite_tests": 17
+    },
+    {
+      "app": "Tiny Tapeout main 8f7b5060",
+      "repo": "https://github.com/h4kyu/tapeout",
+      "commit": "9547201390a2d3a27fe39b7dda10d58c3e4b104b",
+      "workflow_url": "https://github.com/h4kyu/tapeout/actions/runs/44137722092",
+      "placement_utilization_pct": 65.796,
+      "cells_excluding_fill_tap": 1323,
+      "wire_length_um": 50357,
+      "worst_setup_slack_ns": -4.3807696488109125,
+      "worst_hold_slack_ns": 0.23245594995736188,
+      "nominal_setup_slack_ns": 15.725005742628758,
+      "nominal_hold_slack_ns": 0.6096594512900181,
+      "all_setup_corners_ns": {
+        "nom_tt_025C_3v30": 15.725005742628758,
+        "nom_ss_125C_3v00": -3.6640060911277748,
+        "nom_ff_n40C_3v60": 22.680387987430944,
+        "min_tt_025C_3v30": 15.992095211841105,
+        "min_ss_125C_3v00": -3.0706531519954208,
+        "min_ff_n40C_3v60": 22.840576299024814,
+        "max_tt_025C_3v30": 15.410526624314617,
+        "max_ss_125C_3v00": -4.3807696488109125,
+        "max_ff_n40C_3v60": 22.489237775250665
+      },
+      "all_hold_corners_ns": {
+        "nom_tt_025C_3v30": 0.6096594512900181,
+        "nom_ss_125C_3v00": 1.5189196996757817,
+        "nom_ff_n40C_3v60": 0.23474123309588252,
+        "min_tt_025C_3v30": 0.6058554940331617,
+        "min_ss_125C_3v00": 1.511892875909592,
+        "min_ff_n40C_3v60": 0.23245594995736188,
+        "max_tt_025C_3v30": 0.6141853866002073,
+        "max_ss_125C_3v00": 1.527294556276596,
+        "max_ff_n40C_3v60": 0.23746361105155997
+      },
+      "stage": "vga-d",
+      "label": "Retained VGA D (selected RTL)",
+      "gds_ci": {
+        "status": "completed",
+        "conclusion": "success",
+        "jobs": [
+          {
+            "name": "gds",
+            "status": "completed",
+            "conclusion": "success",
+            "url": "https://github.com/h4kyu/tapeout/actions/runs/44137722092/job/134231748882",
+            "started_at": "2026-11-17T17:30:28Z",
+            "completed_at": "2026-11-17T17:34:08Z"
+          },
+          {
+            "name": "viewer",
+            "status": "completed",
+            "conclusion": "success",
+            "url": "https://github.com/h4kyu/tapeout/actions/runs/44137722092/job/134234211833",
+            "started_at": "2026-11-17T17:34:12Z",
+            "completed_at": "2026-11-17T17:34:39Z"
+          },
+          {
+            "name": "precheck",
+            "status": "completed",
+            "conclusion": "success",
+            "url": "https://github.com/h4kyu/tapeout/actions/runs/44137722092/job/134234211870",
+            "started_at": "2026-11-17T17:34:12Z",
+            "completed_at": "2026-11-17T17:36:43Z"
+          },
+          {
+            "name": "gl_test",
+            "status": "completed",
+            "conclusion": "success",
+            "url": "https://github.com/h4kyu/tapeout/actions/runs/44137722092/job/134234212197",
+            "started_at": "2026-11-17T17:34:11Z",
+            "completed_at": "2026-11-17T17:34:56Z"
+          }
+        ]
+      },
+      "workflows": [
+        {
+          "name": "docs",
+          "run_id": 44137721844,
+          "status": "completed",
+          "conclusion": "success",
+          "url": "https://github.com/h4kyu/tapeout/actions/runs/44137721844"
+        },
+        {
+          "name": "test",
+          "run_id": 44137721860,
+          "status": "completed",
+          "conclusion": "success",
+          "url": "https://github.com/h4kyu/tapeout/actions/runs/44137721860"
+        }
+      ],
+      "rtl_suite_tests": 18
+    }
+  ],
+  "reviewed_date": "2026-11-17"
+}
