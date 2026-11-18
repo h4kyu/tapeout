@@ -31,6 +31,13 @@ the sub-100% result depends on both RTL changes and the experimental recipe.
 Full source/library/recipe hashes and cell counts are in
 [the measurement receipt](measurements/vga-area-experiment.json).
 
+The table and receipt describe the original experiment commit, `75a8c57`.
+After giving each gated card bank its own register for Verilator lint, the
+same standalone area recipe maps 51,782.57 µm² (99.65%). The GDS workflow now
+pins LibreLane 3.1.0.dev6 and selects the checked-in `area.abc` through
+`SYNTH_ABC_STRATEGY_SCRIPT`. Check the LibreLane synthesis log for
+`Using custom ABC strategy script` to verify that the hook was applied.
+
 ## Retained changes
 
 - Remove the payout panel and its text request from the compositor. Its

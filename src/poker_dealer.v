@@ -12,7 +12,7 @@ module poker_dealer (
     input wire prng_ready,
     output wire dealer_ready,
     output reg done,
-    output reg [29:0] cards,
+    output wire [29:0] cards,
     output reg [51:0] dealt_mask
 );
 
@@ -56,11 +56,13 @@ module poker_dealer (
     wire accept_card=busy && !held[slot] && prng_ready && valid_rank && !candidate_used;
     generate for(genvar bank=0;bank<5;bank=bank+1) begin:card_storage
         wire bank_clock;
+        reg [5:0] card;
         clock_gate bank_gate(.clk(clk),.enable(new_hand || (accept_card && slot==bank)),.gated_clk(bank_clock));
         always @(posedge bank_clock or negedge rst_n) begin
-            if(!rst_n) cards[bank*6 +:6]<=0;
-            else cards[bank*6 +:6]<=new_hand ? 6'd0 : candidate;
+            if (!rst_n) card <= 6'd0;
+            else card <= new_hand ? 6'd0 : candidate;
         end
+        assign cards[bank*6 +: 6] = card;
     end endgenerate
 
     always @(posedge clk or negedge rst_n) begin
