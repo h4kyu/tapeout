@@ -88,8 +88,8 @@ def test_hold_labels_persist_after_draw_and_clear_next_round():
             else:
                 assert payout == baseline, "HOLD request interfered with payout text"
             for card in range(5):
-                left = 51 + 121 * card
-                region = b"".join(frame[(y * 640 + left) * 4:(y * 640 + left + 54) * 4]
+                left = 32 + 128 * card
+                region = b"".join(frame[(y * 640 + left) * 4:(y * 640 + left + 60) * 4]
                                   for y in range(246, 258))
                 if mask & (1 << card):
                     assert b"\xff\xff\xff\xff" in region, f"Missing HOLD on card {card + 1}"
@@ -97,7 +97,7 @@ def test_hold_labels_persist_after_draw_and_clear_next_round():
                         label_pixels = region
                     assert region == label_pixels, "Labels must share the same glyph rendering"
                 else:
-                    assert region == bytes((0, 170, 0, 255)) * (54 * 12)
+                    assert region == bytes((0, 170, 0, 255)) * (60 * 12)
 
         try:
             await sim.reset()
@@ -123,7 +123,7 @@ def test_hold_labels_persist_after_draw_and_clear_next_round():
     asyncio.run(play())
 
 
-def test_credits_and_bet_track_game_balance():
+def test_credits_track_game_balance_and_wager_label_is_blank():
     from sim.vga_capture import FRAME_CLOCKS
 
     async def play():
@@ -134,14 +134,14 @@ def test_credits_and_bet_track_game_balance():
             _, frame = sim.driver.latest_rgba()
             def region(left, width):
                 return b"".join(frame[(y * 640 + left) * 4:(y * 640 + left + width) * 4]
-                                for y in range(446, 458))
-            return region(555, 60), region(25, 60)
+                                for y in range(448, 460))
+            return region(544, 76), region(16, 76)
 
         try:
             await sim.reset()
             initial_credits, bet = await footer()
             assert b"\xff\xff\x00\xff" in initial_credits
-            assert b"\xff\xff\x00\xff" in bet
+            assert bet == bytes((0, 170, 0, 255)) * (76 * 12)
             await sim.press_deal_draw()
             await sim.wait_for_state(2)
             assert sim.snapshot().balance == 95
@@ -230,7 +230,7 @@ def test_footer_result_shows_win_or_game_over_without_panel():
                 else:
                     raise AssertionError("No example hand found")
                 before = await frame()
-                assert region(before,266,446,108,12) == green*(108*12)
+                assert region(before,256,448,140,12) == green*(140*12)
                 await sim.set_holds(1,2,3,4,5)
                 await sim.press_deal_draw()
                 await sim.wait_for_state(5)
@@ -239,26 +239,26 @@ def test_footer_result_shows_win_or_game_over_without_panel():
                 # Holding all cards keeps their pixels identical: no result
                 # rectangle or text is allowed to obscure their faces anymore.
                 assert region(after,0,261,640,154) == region(before,0,261,640,154)
-                text = region(after,266,446,108,12)
+                text = region(after,256,448,140,12)
                 assert {text[i:i+4] for i in range(0,len(text),4)} == {green,yellow}
                 # The old large panel area in the footer contains only green
                 # and yellow result pixels, never any gray background.
                 footer = region(after,181,428,278,48)
                 assert {footer[i:i+4] for i in range(0,len(footer),4)} == {green,yellow}
-                for top,height in ((442,4),(458,4)):
+                for top,height in ((444,4),(460,4)):
                     assert region(after,262,top,116,height) == green*(116*height)
                 await sim.set_holds()
                 await sim.press_deal_draw()
                 await sim.wait_for_state(2)
-                assert region(await frame(),266,446,108,12) == green*(108*12)
+                assert region(await frame(),256,448,140,12) == green*(140*12)
             await sim.reset()
-            assert region(await frame(),266,446,108,12) == green*(108*12)
+            assert region(await frame(),256,448,140,12) == green*(140*12)
         finally:
             sim.close()
     asyncio.run(play())
 
 
-def test_card_indices_rotate_and_use_suit_colors():
+def test_centered_card_glyphs_use_suit_colors():
     from sim.vga_capture import FRAME_CLOCKS
 
     async def play():
@@ -270,26 +270,20 @@ def test_card_indices_rotate_and_use_suit_colors():
             await sim.reset(23)
             await sim.advance(2*FRAME_CLOCKS)
             _, frame = sim.driver.latest_rgba()
-            assert region(frame, 23, 261, 110, 154) == bytes((255,255,255,255))*(110*154)
+            assert region(frame, 9, 261, 110, 154) == bytes((255,255,255,255))*(110*154)
             await sim.press_deal_draw()
             await sim.wait_for_state(2)
             await sim.advance(2*FRAME_CLOCKS)
             _, frame = sim.driver.latest_rgba()
             for i, card in enumerate(sim.snapshot().cards):
-                left = 23+121*i
-                top = region(frame, left+5, 269, 24, 12)
-                bottom = region(frame, left+81, 395, 24, 12)
-                assert top == b''.join(bottom[j:j+4] for j in range(len(bottom)-4, -1, -4))
-                colors = {top[j:j+4] for j in range(0, len(top), 4)}
+                left = 128 * i
+                rank = region(frame, left + 40, 304, 48, 24)
+                suit = region(frame, left + 52, 352, 24, 24)
                 ink = bytes((255,0,0,255)) if card >> 4 in (1,2) else bytes((0,0,0,255))
-                assert colors == {bytes((255,255,255,255)), ink}
-                corner = region(frame, left+11, 285, 12, 12)
-                if (card & 15) in (11,12,13):
-                    assert ink in {corner[j:j+4] for j in range(0,len(corner),4)}
-                else:
-                    assert corner == bytes((255,255,255,255))*144
-                center = region(frame, left+27, 293, 56, 96)
-                assert ink in {center[j:j+4] for j in range(0,len(center),4)}
+                white = bytes((255,255,255,255))
+                for glyph in (rank, suit):
+                    assert {glyph[j:j+4] for j in range(0, len(glyph), 4)} == {white, ink}
+                assert region(frame, left + 12, 269, 24, 24) == white * (24 * 24)
         finally:
             sim.close()
     asyncio.run(play())
