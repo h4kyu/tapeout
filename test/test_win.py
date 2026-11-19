@@ -26,19 +26,19 @@ async def win_banner_requests(dut):
         dut.status_payout.value = payout
         text = f"WIN {payout:04d} " if payout else "GAME OVER"
         for column, character in enumerate(text):
-            assert await pixel(266 + 12*column, 446) == (1, characters.index(character), 0, 0)
-            assert await pixel(277 + 12*column, 457) == (1, characters.index(character), 11, 11)
-        for x, y in ((265,446),(374,446),(320,445),(320,458),(320,340)):
+            assert await pixel(256 + 16*column, 448) == (1, characters.index(character), 0, 0)
+            assert await pixel(267 + 16*column, 459) == (1, characters.index(character), 11, 11)
+        for x, y in ((255,448),(400,448),(320,447),(320,460),(320,340)):
             assert (await pixel(x,y))[0] == 0
 
     dut.status_payout.value = 5
     for y in range(12):
         for x in range(12):
-            assert await pixel(266+x,446+y) == (1,characters.index('W'),x,y)
+            assert await pixel(256+x,448+y) == (1,characters.index('W'),x,y)
     for state in (0,1,2,3,4,6,7):
         dut.status_state.value = state
-        assert (await pixel(320,446))[0] == 0
+        assert (await pixel(320,448))[0] == 0
     dut.status_state.value = 5
     for payout in range(4096):
         dut.status_payout.value = payout
-        assert (await pixel(320,446))[0] == int(payout in PAYOUTS)
+        assert (await pixel(320,448))[0] == int(payout in PAYOUTS)

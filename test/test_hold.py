@@ -16,7 +16,7 @@ async def hold_label_geometry(dut):
             expected = None
             for card in (0, 2, 4):
                 for column, character in enumerate(characters):
-                    left = 23 + 121 * card + 28 + 14 * column
+                    left = 128 * card + 32 + 16 * column
                     if 246 <= y < 258 and left <= x < left + 12:
                         expected = (character, x - left, y - 246)
             assert int(dut.hold_text_active.value) == (expected is not None), (x, y)
@@ -29,6 +29,6 @@ async def hold_label_geometry(dut):
     for mask in range(32):
         dut.hold_selected.value = mask
         for card in range(5):
-            dut.hold_x.value = 51 + 121 * card
+            dut.hold_x.value = 32 + 128 * card
             await Timer(1, unit="ns")
             assert int(dut.hold_text_active.value) == bool(mask & (1 << card))
