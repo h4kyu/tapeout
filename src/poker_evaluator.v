@@ -90,15 +90,20 @@ module poker_evaluator #(parameter DEALER_VALIDATED=0) (
         two_pairs_found = two_pairs_found | (rank_equal[1][2] & rank_equal[3][4]);
         two_pairs_found = two_pairs_found | (rank_equal[1][3] & rank_equal[2][4]);
         two_pairs_found = two_pairs_found | (rank_equal[1][4] & rank_equal[2][3]);
-        for (k = 0; k < 9; k = k + 1)
-            if (ranks[k +:5] == 5'b11111) straight = 1'b1;
-        // A,2,3,4,5: ace is low only for this straight.
-        if (ranks[12] && ranks[3:0] == 4'b1111) straight = 1'b1;
-
+        straight = !pair_found && (((rank[0] >= 2 && rank[0] <= 6) && (rank[1] >= 2 && rank[1] <= 6) && (rank[2] >= 2 && rank[2] <= 6) && (rank[3] >= 2 && rank[3] <= 6) && (rank[4] >= 2 && rank[4] <= 6)) ||
+            ((rank[0] >= 3 && rank[0] <= 7) && (rank[1] >= 3 && rank[1] <= 7) && (rank[2] >= 3 && rank[2] <= 7) && (rank[3] >= 3 && rank[3] <= 7) && (rank[4] >= 3 && rank[4] <= 7)) ||
+            ((rank[0] >= 4 && rank[0] <= 8) && (rank[1] >= 4 && rank[1] <= 8) && (rank[2] >= 4 && rank[2] <= 8) && (rank[3] >= 4 && rank[3] <= 8) && (rank[4] >= 4 && rank[4] <= 8)) ||
+            ((rank[0] >= 5 && rank[0] <= 9) && (rank[1] >= 5 && rank[1] <= 9) && (rank[2] >= 5 && rank[2] <= 9) && (rank[3] >= 5 && rank[3] <= 9) && (rank[4] >= 5 && rank[4] <= 9)) ||
+            ((rank[0] >= 6 && rank[0] <= 10) && (rank[1] >= 6 && rank[1] <= 10) && (rank[2] >= 6 && rank[2] <= 10) && (rank[3] >= 6 && rank[3] <= 10) && (rank[4] >= 6 && rank[4] <= 10)) ||
+            ((rank[0] >= 7 && rank[0] <= 11) && (rank[1] >= 7 && rank[1] <= 11) && (rank[2] >= 7 && rank[2] <= 11) && (rank[3] >= 7 && rank[3] <= 11) && (rank[4] >= 7 && rank[4] <= 11)) ||
+            ((rank[0] >= 8 && rank[0] <= 12) && (rank[1] >= 8 && rank[1] <= 12) && (rank[2] >= 8 && rank[2] <= 12) && (rank[3] >= 8 && rank[3] <= 12) && (rank[4] >= 8 && rank[4] <= 12)) ||
+            ((rank[0] >= 9 && rank[0] <= 13) && (rank[1] >= 9 && rank[1] <= 13) && (rank[2] >= 9 && rank[2] <= 13) && (rank[3] >= 9 && rank[3] <= 13) && (rank[4] >= 9 && rank[4] <= 13)) ||
+            ((rank[0] >= 10 && rank[0] <= 14) && (rank[1] >= 10 && rank[1] <= 14) && (rank[2] >= 10 && rank[2] <= 14) && (rank[3] >= 10 && rank[3] <= 14) && (rank[4] >= 10 && rank[4] <= 14)) ||
+            ((rank[0] <= 5 || rank[0] == 14) && (rank[1] <= 5 || rank[1] == 14) && (rank[2] <= 5 || rank[2] == 14) && (rank[3] <= 5 || rank[3] == 14) && (rank[4] <= 5 || rank[4] == 14)));
         category = 4'd0;
         payout = 12'd0;
         if (valid_hand) begin
-            if (flush && ranks[12:8] == 5'b11111) begin
+            if (flush && straight && rank[0] >= 10 && rank[1] >= 10 && rank[2] >= 10 && rank[3] >= 10 && rank[4] >= 10) begin
                 category = 4'd9; payout = 12'd4000;
             end else if (flush && straight) begin
                 category = 4'd8; payout = 12'd250;

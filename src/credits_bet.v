@@ -133,72 +133,18 @@ module credits_bet #(parameter MULTIPLE_OF_FIVE=0, parameter EXTERNAL_DIGITS=0) 
         end
     endfunction
 
-    function [5:0] bet_character;
-        input [2:0] column;
-        begin
-            case (column)
-                3'd0: bet_character = 6'd12; // B
-                3'd1: bet_character = 6'd15; // E
-                3'd2: bet_character = 6'd30; // T
-                3'd4: bet_character = 6'd6;  // 5
-                default: bet_character = 6'd0;
-            endcase
-        end
-    endfunction
-
     // Fixed five-digit balance and nine-cell result field keep positions constant.
-    reg [3:0] column;
-    reg [4:0] x_offset;
-    reg [4:0] y_offset;
-    reg [6:0] local_x;
-    reg [6:0] origin;
-    reg [3:0] cell_phase;
-    reg [2:0] region;
-
+    wire [5:0] cell_id=x[9:4];
+    wire [3:0] column=x[7:4] - (cell_id<26 ? 0 : cell_id<34 ? 10 : 2);
+    wire [2:0] region = cell_id>=26 && cell_id<=32 ? 2 : cell_id>=34 && cell_id<=38 ? 3 :
+            cell_id>=16 && cell_id<=24 && result_ready ? 4 : 0;
+    wire [4:0] x_offset={1'b0,x[3:0]};
+    wire [4:0] y_offset={1'b0,y[3:0]};
     always @* begin
-        text_active = 1'b0;
-        character = 6'd0;
-        x_offset = 0;
-        y_offset = 0;
-        origin = 0;
-        region = 3'd0;
-        // Choose a text region before decoding the character position.
-        if (y >= 446 && y < 458) begin
-            if (x >= 25 && x < 85) begin
-                region = 3'd1;
-                origin = 7'd25;
-            end else if (x >= 10'd459 && x < 10'd543) begin
-                region = 3'd2;
-                origin = 7'd75;
-            end else if (x >= 555 && x < 615) begin
-                region = 3'd3;
-                origin = 7'd43;
-            end else if (result_ready && x>=266 && x<374) begin
-                region=3'd4;
-                origin=7'd10;
-            end
-        end
-        local_x = x[6:0] - origin;
-        // All regions share this cell decoder and glyph-offset subtractor.
-        case(local_x[6:2])
-5'd0, 5'd1, 5'd2: column=4'd0;
-5'd3, 5'd4, 5'd5: column=4'd1;
-5'd6, 5'd7, 5'd8: column=4'd2;
-5'd9, 5'd10, 5'd11: column=4'd3;
-5'd12, 5'd13, 5'd14: column=4'd4;
-5'd15, 5'd16, 5'd17: column=4'd5;
-5'd18, 5'd19, 5'd20: column=4'd6;
-5'd21, 5'd22, 5'd23: column=4'd7;
-5'd24, 5'd25, 5'd26: column=4'd8;
-            default:column=4'bx;
-        endcase
-        cell_phase=local_x[3:0]+{column[1:0],2'b00};
-        if (region != 3'd0) begin
-            text_active = 1'b1;
-            x_offset = {1'b0,cell_phase};
-            y_offset = y - 446;
+        character=0;
+        text_active=region!=0 && y>=448 && y<460 && x[3:0]<12;
+        if (text_active) begin
             case (region)
-                2'd1: character = bet_character(column[2:0]);
                 2'd2: character = credits_character(column[2:0]);
                 2'd3: character = {2'b00, digit_id};
                 3'd4: begin

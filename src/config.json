@@ -13,7 +13,7 @@
 
   "//": "PL_TARGET_DENSITY_PCT - You can increase this if Global Placement fails with error GPL-0302.",
   "//": "Users have reported that values up to 80 worked well for them.",
-  "PL_TARGET_DENSITY_PCT": 60,
+  "PL_TARGET_DENSITY_PCT": 83,
 
   "//": "CLOCK_PERIOD - Increase this in case you are getting setup time violations.",
   "//": "The value is in nanoseconds, so 40ns == 25MHz.",
@@ -60,6 +60,17 @@
   "FP_IO_VLENGTH": 2,
 
   "FP_PDN_VPITCH": 38.87,
+
+  "//": "Proof of concept placement sizing. Signoff still uses all nine corners and standard limits.",
+  "DESIGN_REPAIR_MAX_SLEW_PCT": 0,
+  "DESIGN_REPAIR_MAX_CAP_PCT": 0,
+  "GRT_DESIGN_REPAIR_MAX_SLEW_PCT": 0,
+  "GRT_DESIGN_REPAIR_MAX_CAP_PCT": 0,
+  "CTS_CLK_BUFFERS": [
+    "gf180mcu_fd_sc_mcu7t5v0__clkbuf_2",
+    "gf180mcu_fd_sc_mcu7t5v0__clkbuf_4"
+  ],
+  "CTS_ROOT_BUFFER": "gf180mcu_fd_sc_mcu7t5v0__clkbuf_4",
 
   "//": "Clock",
   "RUN_CTS": 1,

@@ -18,7 +18,7 @@ module debounce #(
     reg button_in_sync1;
     reg button_in_sync2;
 
-    // 19-bit shift recurrence for the production delay. Start at zero
+    // Primitive 19-bit recurrence for the production delay. Start at zero
     // after each bounce. The terminal word is reached after 499999 shifts.
     localparam USE_LFSR = DEBOUNCE_CYCLES == 500000;
     wire [COUNTER_WIDTH-1:0] next_count;
@@ -41,7 +41,7 @@ module debounce #(
             button_in_sync1 <= button_in;
             button_in_sync2 <= button_in_sync1;
 
-            // Restart the full interval after any bounce.
+            // Count down so the terminal check is a zero comparison.
             if (button_in_sync2 == button_out)
                 counter <= INITIAL_COUNT;
             else if (counter == TERMINAL_COUNT) begin

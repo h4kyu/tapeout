@@ -25,38 +25,11 @@ module hold_labels (
         end
     endfunction
 
-    wire [6:0] column_x;
-    wire [2:0] slot;
-    wire column_active;
-    card_column column_geometry(.x(x), .local_x(column_x), .slot(slot), .active(column_active));
-    wire selected = column_active && column_x>=28 && column_x<82 && held_cards[slot];
-    reg [5:0] local_x;
-    reg [5:0] cell_left;
-    reg [1:0] column;
-    reg [3:0] x_offset;
-    reg [3:0] y_offset;
     always @* begin
-        text_active = 1'b0;
-        character = 6'd0;
-        local_x = 6'd0;
-        cell_left = 6'd0;
-        column = 2'd0;
-        x_offset = 4'd0;
-        y_offset = 4'd0;
-        if (selected && y >= 246 && y < 258) begin
-            local_x = column_x[5:0]-6'd28;
-            if (local_x >= 42) begin column=2'd3; cell_left=6'd42; end
-            else if (local_x >= 28) begin column=2'd2; cell_left=6'd28; end
-            else if (local_x >= 14) begin column=2'd1; cell_left=6'd14; end
-            if (local_x-cell_left < 6'd12) begin
-                text_active=1'b1;
-                character=hold_character(column);
-                x_offset=local_x-cell_left;
-                y_offset=y-246;
-            end
-        end
+        text_active = y>=246 && y<258 && x<640 && x[6:0]>=32 && x[6:0]<96
+                    && x[3:0]<12 && held_cards[x[9:7]];
+        character=hold_character(x[5:4]-2'd2);
     end
-
-    assign glyph_x = x_offset[3:0];
-    assign glyph_y = y_offset[3:0];
+    assign glyph_x=x[3:0];
+    assign glyph_y=y-246;
 endmodule

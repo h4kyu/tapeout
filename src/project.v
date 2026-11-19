@@ -68,13 +68,10 @@ module tt_um_h4kyu_video_poker #(
     .result_payout(result_payout), .can_deal()
   );
 
-  // The last card settles a full clock before HOLD or EVALUATE. Capturing
-  // the live category on that intervening edge saves an evaluator-to-font
-  // path while preserving the first displayed pixel of each state.
-  reg [3:0] displayed_category;
+  reg [3:0] completed_category;
   always @(posedge clk or negedge rst_n) begin
-    if (!rst_n) displayed_category <= 0;
-    else displayed_category <= hand_category;
+    if(!rst_n) completed_category <= 0;
+    else completed_category <= hand_category;
   end
 
   // VGA
@@ -91,7 +88,7 @@ module tt_um_h4kyu_video_poker #(
     .balance        (balance),
     .held_cards     (held_cards),
     .state          (state),
-    .hand_category  (displayed_category),
+    .hand_category  (completed_category),
     .result_category(result_category),
     .result_payout  (result_payout),
     .clk            (clk),
