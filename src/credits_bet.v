@@ -2,7 +2,8 @@
 
 // Footer glyph requests. Uses the shared font ROM in vga.v; no ROM here.
 // BET, credits, and result share native 12-pixel cells with yellow text.
-module credits_bet #(parameter MULTIPLE_OF_FIVE=0) (
+module credits_bet #(parameter MULTIPLE_OF_FIVE=0, parameter EXTERNAL_DIGITS=0) (
+    input wire [19:0] credit_digits,
     input wire [2:0] state,
     input wire [11:0] payout,
     input  wire clk,
@@ -102,15 +103,16 @@ module credits_bet #(parameter MULTIPLE_OF_FIVE=0) (
         end
     end
 
+    wire [19:0] digits = EXTERNAL_DIGITS ? credit_digits : displayed_digits;
     reg [3:0] credit_digit;
     wire [3:0] digit_id=credit_digit+4'd1;
     always @* begin
         case (column)
-            0: credit_digit=displayed_digits[19:16];
-            1: credit_digit=displayed_digits[15:12];
-            2: credit_digit=displayed_digits[11:8];
-            3: credit_digit=displayed_digits[7:4];
-            4: credit_digit=displayed_digits[3:0];
+            0: credit_digit=digits[19:16];
+            1: credit_digit=digits[15:12];
+            2: credit_digit=digits[11:8];
+            3: credit_digit=digits[7:4];
+            4: credit_digit=digits[3:0];
             default: credit_digit=0;
         endcase
     end

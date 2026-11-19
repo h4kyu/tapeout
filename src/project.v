@@ -53,15 +53,29 @@ module tt_um_h4kyu_video_poker #(
   wire [3:0] result_category;
   wire [11:0] result_payout;
 
-  poker_core game (
+  // Two accepted presses are at least twice the debounce period apart.
+  // Even five worst-case 255-clock searches finish well before the next
+  // production press, so the 17-clock credit display update never overlaps.
+  localparam SPACED_CREDITS = DEBOUNCE_CYCLES >= 2048;
+  wire [19:0] credit_digits;
+  poker_core #(.SPACED_CREDITS(SPACED_CREDITS)) game (
     .clk(clk), .rst_n(rst_n),
     .deal_draw_pulse(deal_draw_pulse), .hold_mask(hold_mask),
     .candidate(candidate), .prng_ready(prng_ready),
     .dealer_ready(), .dealt_mask(),
     .cards(cards), .held_cards(held_cards), .state(state),
-    .balance(balance), .hand_category(hand_category), .result_category(result_category),
+    .credit_digits(credit_digits), .balance(balance), .hand_category(hand_category), .result_category(result_category),
     .result_payout(result_payout), .can_deal()
   );
+
+  // The last card settles a full clock before HOLD or EVALUATE. Capturing
+  // the live category on that intervening edge saves an evaluator-to-font
+  // path while preserving the first displayed pixel of each state.
+  reg [3:0] displayed_category;
+  always @(posedge clk or negedge rst_n) begin
+    if (!rst_n) displayed_category <= 0;
+    else displayed_category <= hand_category;
+  end
 
   // VGA
 
@@ -71,12 +85,13 @@ module tt_um_h4kyu_video_poker #(
   wire       hsync;
   wire       vsync;
 
-  vga game_vga_renderer (
+  vga #(.EXTERNAL_DIGITS(SPACED_CREDITS)) game_vga_renderer (
+    .credit_digits(credit_digits),
     .cards          (cards),
     .balance        (balance),
     .held_cards     (held_cards),
     .state          (state),
-    .hand_category  (hand_category),
+    .hand_category  (displayed_category),
     .result_category(result_category),
     .result_payout  (result_payout),
     .clk            (clk),

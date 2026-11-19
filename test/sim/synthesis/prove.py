@@ -23,7 +23,7 @@ for name,ins,outs in specs:
  new=(root/f'src/{name}.v').read_text()
  if name=='credits_bet':
   for which,text in [('old',old),('new',new)]:
-   start=text.index('    // Serial double-dabble');end=text.index('    function [5:0] credits_character') if which=='old' else text.index('    reg [3:0] credit_digit;')
+   start=text.index('    // Serial double-dabble');end=text.index('    function [5:0] credits_character') if which=='old' else text.index('    wire [19:0] digits =')
    text=text[:start]+text[end:]
    loc=text.index('    input wire [2:0] state,');text=text[:loc]+'    input wire [19:0] displayed_digits,\n'+text[loc:]
    if which=='old':old=text

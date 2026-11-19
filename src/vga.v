@@ -1,6 +1,7 @@
 `default_nettype none
 
-module vga (
+module vga #(parameter EXTERNAL_DIGITS=0) (
+    input wire [19:0] credit_digits,
     input  wire [29:0] cards,
     input  wire [15:0] balance,
     input  wire [4:0]  held_cards,
@@ -71,7 +72,8 @@ module vga (
     wire [4:0] footer_pixel_x;
     wire [4:0] footer_pixel_y;
 
-    credits_bet #(.MULTIPLE_OF_FIVE(1)) footer (
+    credits_bet #(.MULTIPLE_OF_FIVE(1), .EXTERNAL_DIGITS(EXTERNAL_DIGITS)) footer (
+        .credit_digits(credit_digits),
         .clk(clk), .rst_n(rst_n), .x(x), .y(y), .balance(balance),
         .state(state), .payout(result_payout),
         .text_active(footer_text_active), .character(footer_character),
@@ -145,12 +147,10 @@ module vga (
     // The text regions are vertically disjoint, and active glyph coordinates
     // are already bounded to 0..11 by every producer.
     wire font_card = card_text_active;
-    wire [11:0] font_pixels;
-    wire text_pixel = font_active && font_pixels[4'd11 - font_column];
-
-    font_rom text_font (
-        .character(font_character), .row(font_row), .pixels(font_pixels)
-    );
+    wire ink;
+    font_ink text_font(.character(font_character), .row(font_row),
+                       .col(4'd11 - font_column), .ink(ink));
+    wire text_pixel = font_active && ink;
 
     always @* begin
         red   = 2'b00;
