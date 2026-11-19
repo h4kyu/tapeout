@@ -80,8 +80,8 @@ def check_fixtures(images, records):
     # JSON round-trip normalizes Snapshot.cards' tuple to the stored array.
     assert json.loads(json.dumps(records)) == json.loads((FIXTURES / 'schedule.json').read_text())
     for name, pixels in images.items():
-        expected = bytes((0,170,0)) * (640*196) + fixture_rgb(FIXTURES / f'{name}.png')[640*196*3:]
-        assert pixels == expected, f'{name}: rendered RGB changed outside permitted payout removal'
+        expected = fixture_rgb(FIXTURES / f'{name}.png')
+        assert pixels == expected, f'{name}: rendered RGB changed'
 
 
 async def native_replay():

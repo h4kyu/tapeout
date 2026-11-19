@@ -5,14 +5,14 @@ module tb_credits_exhaustive;
     always #20 clk=~clk;
     reg rst_n=0;
     reg [15:0] balance=100;
-    reg [9:0] x=555;
+    reg [9:0] x=544;
     wire [5:0] character;
     wire [4:0] pixel_x;
     integer amount, column, divisor;
     reg [19:0] expected, previous=20'h00100;
-    credits_bet general_digits(.clk(clk),.rst_n(rst_n),.x(x),.y(10'd446),
+    credits_bet general_digits(.clk(clk),.rst_n(rst_n),.x(x),.y(10'd448),
         .balance(balance),.state(3'd0),.payout(12'd0),.character(character),.pixel_x(pixel_x));
-    credits_bet #(.MULTIPLE_OF_FIVE(1)) game_digits(.clk(clk),.rst_n(rst_n),.x(x),.y(10'd446),
+    credits_bet #(.MULTIPLE_OF_FIVE(1)) game_digits(.clk(clk),.rst_n(rst_n),.x(x),.y(10'd448),
         .balance(balance),.state(3'd0),.payout(12'd0));
     initial begin
         repeat(2) @(negedge clk);
@@ -32,7 +32,7 @@ module tb_credits_exhaustive;
                 $fatal(1,"Wrong production conversion: %d",amount);
             divisor=10000;
             for(column=0;column<5;column=column+1) begin
-                x=555+12*column;
+                x=544+16*column;
                 #1;
                 if(character !== ((amount/divisor)%10)+1 || pixel_x !== 0)
                     $fatal(1,"Wrong glyph ID/phase: balance %d column %d",amount,column);
