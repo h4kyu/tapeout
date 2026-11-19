@@ -6,7 +6,83 @@ HOLD persistence, hand names, colors, footer layout, game state transitions,
 credits, payouts, PRNG sequence, and button timing retain their baseline behavior.
 The blank upper area is intentional; no other elements have been moved.
 
-## Measured result
+## Physical follow-up on the 1×1 tile
+
+The previous [GDS run](https://github.com/h4kyu/tapeout/actions/runs/44355650876/job/134982917889)
+stopped at 119.475% in global placement. I reproduced the physical flow locally
+with LibreLane 3.1.0.dev6, GF180 PDK revision
+`792ef67037d74c8c51811eab3ce23cf793491296`, the TT 1×1 DEF, 7-track
+library, 40 ns clock, and the merged config from that run. The local tools ran
+on Linux arm64. Both runs used the custom ABC recipe.
+
+| Same display, payout sheet already removed | Previous CI | Current local RTL |
+| --- | ---: | ---: |
+| Movable standard cells before placement | 51,729.89 µm² | 45,506.50 µm² |
+| Fixed tap and endcap area | 1,870.31 µm² | 1,870.31 µm² |
+| Placer adjustment for pin density | 8,123.30 µm² | 6,821.79 µm² |
+| OpenROAD global-placement utilization | 119.475% | **104.455%** |
+
+This saves **6,223.39 µm²** of mapped cells. The placer still reports 2,231.63
+µm² more effective area than available. In a separate full-display diagnostic,
+suppressing virtual pin inflation got through global placement. Electrical
+repair then raised actual movable area to **105.0% of the available rows**.
+
+The production account stores four BCD digits and the units 0/5 bit. An award
+or wager changes affordability and the observed binary balance immediately.
+The decimal bank commits once at the same 17-clock boundary as the former
+converter. This specialization is enabled for debounce periods of at least
+2,048 clocks. Successive rising button pulses require a release and another
+press. From an accepted draw the eight-bit maximal PRNG visits every nonzero
+state within 255 clocks, so even five sequential replacement searches plus
+controller transitions finish before another production press can overlap
+that commit. Short-debounce and standalone callers retain the general account
+and converter. The font now groups identical pixel-coordinate sets and selects
+one ink bit. The chip also uses a fixed 19-bit shift recurrence for the
+500,000-clock button qualification, a shared absolute grid for hand-name
+addressing, and the completed category captured before its first visible state.
+
+Validation covered 22 chip tests, 17 host tests, 7 simulation tests, seven SAT
+comparisons, the existing decimal converter sweep and a new exhaustive wallet
+sweep covering 13,108 reachable balances. A four-state run checked 100,000
+core cycles. A separate production comparison against `9a6b7c0` checked every
+VGA output bit, both clock phases, displayed digits, accepted presses and
+game state across 15,001,259 clocks, including rejected just-short presses,
+reset and six draws. Reproduce the last check from `test/` with
+`python3 -m sim.synthesis.production_equivalence --reference 9a6b7c0`.
+
+### Display alternatives measured outside the branch
+
+I tested separate netlists before selecting any visual change. Removing the
+hand-name band alone passed global placement in a tuned run and exhausted the
+rows during clock-tree synthesis. A centered rank and suit removes the pip
+matrix, mirrored corners and J/Q/K center artwork. The shortlisted alternatives
+also use 128-pixel card slots, 16-pixel text cells, a compact 3×5 alphabet and
+smaller clock buffers. The comparison keeps the same 1×1 DEF, 40 ns period,
+production debounce and nine timing corners. The exploratory runs set slew
+and capacitance repair margins to zero in the early flow; the extracted reports
+still check the original design rules. Layout estimates from isolated cuts
+must not be added together.
+
+All three routed prototypes below had zero detailed-route DRC errors, zero
+Magic DRC errors, and a clean LVS comparison. Results are post-route with
+extracted parasitics. The compact renderers pipeline video and sync together
+by two pixel clocks. The flow reports one max-fanout violation in each case.
+
+| Centered rank over suit | Final cell utilization | Worst setup at 25 MHz | Worst hold | Max-slew violations |
+| --- | ---: | ---: | ---: | ---: |
+| Keep hand names, pipelined text | 92.01% | −7.133 ns | +0.170 ns | 490 |
+| Keep hand names, simplified glyph logic and split decimal carry | 92.51% | −3.091 ns | +0.105 ns | 581 |
+| Remove hand names, split carry and late electrical repair | **84.70%** | **0.000 ns** | **+0.126 ns** | **163** |
+
+The third prototype passed setup and hold across all nine corners and retained
+HOLD, BET, CREDITS and WIN/GAME OVER. This is sufficient for the area and
+clock-period targets in that layout. Tapeout still requires closing slew and
+fanout. The utilization difference includes mapping and repair differences
+and cannot be attributed entirely to removing the hand name. A left-aligned
+full-name variant still had 613 detailed-routing violations after 15 iterations
+when the trial was stopped. All visual alternatives remain scratch prototypes.
+
+## Original synthesis experiment
 
 GF180 MCU 7-track 5V typical 25°C/3.3V, production 500,000-cycle debounce,
 Yosys 0.33. All counted instances are real GF180 standard cells; the receipt
