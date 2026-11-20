@@ -104,6 +104,9 @@ module credits_bet #(parameter MULTIPLE_OF_FIVE=0, parameter EXTERNAL_DIGITS=0) 
     end
 
     wire [19:0] digits = EXTERNAL_DIGITS ? credit_digits : displayed_digits;
+    // Fixed five-digit balance and nine-cell result field keep positions constant.
+    wire [5:0] cell_id=x[9:4];
+    wire [3:0] column=x[7:4] - (cell_id<26 ? 0 : cell_id<34 ? 10 : 2);
     reg [3:0] credit_digit;
     wire [3:0] digit_id=credit_digit+4'd1;
     always @* begin
@@ -133,9 +136,6 @@ module credits_bet #(parameter MULTIPLE_OF_FIVE=0, parameter EXTERNAL_DIGITS=0) 
         end
     endfunction
 
-    // Fixed five-digit balance and nine-cell result field keep positions constant.
-    wire [5:0] cell_id=x[9:4];
-    wire [3:0] column=x[7:4] - (cell_id<26 ? 0 : cell_id<34 ? 10 : 2);
     wire [2:0] region = cell_id>=26 && cell_id<=32 ? 2 : cell_id>=34 && cell_id<=38 ? 3 :
             cell_id>=16 && cell_id<=24 && result_ready ? 4 : 0;
     wire [4:0] x_offset={1'b0,x[3:0]};

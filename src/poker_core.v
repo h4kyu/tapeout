@@ -35,12 +35,12 @@ module poker_core #(parameter SPACED_CREDITS=0) (
     // The dealer guarantees unique valid cards once the initial hand is full.
     // During its initial fill, the old evaluator returned zero for empty slots.
     assign hand_category = (state==IDLE || (state==DEALING && !dealer_done)) ? 4'd0 : category;
-    wire [16:0] balance_change = start_deal ? 17'h1fffb : {5'b0,payout};
-    wire [16:0] credited_balance = {1'b0,balance} + balance_change;
     wire funded;
     assign can_deal = (state == IDLE || state == RESULT) && funded;
     wire start_deal = deal_draw_pulse && can_deal;
     wire start_draw = deal_draw_pulse && state == HOLD;
+    wire [16:0] balance_change = start_deal ? 17'h1fffb : {5'b0,payout};
+    wire [16:0] credited_balance = {1'b0,balance} + balance_change;
 
     poker_dealer dealer (
         .clk(clk), .rst_n(rst_n), .start(start_deal || start_draw),
