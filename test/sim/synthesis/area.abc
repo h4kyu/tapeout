@@ -1,0 +1,30 @@
+# Experimental area-oriented mapping. This is not a timing-closure script.
+fx
+mfs
+strash
+refactor
+balance
+rewrite
+refactor
+balance
+rewrite
+rewrite -z
+balance
+refactor -z
+rewrite -z
+balance
+resub -K 6
+resub -K 8 -N 2
+resub -z -K 10 -N 2
+balance
+fraig_store
+balance
+fraig_store
+balance
+rewrite
+refactor
+rewrite -z
+balance
+fraig_store
+fraig_restore
+amap -m -Q 0.1 -F 20 -A 20 -C 5000

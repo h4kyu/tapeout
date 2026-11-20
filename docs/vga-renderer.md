@@ -1,5 +1,8 @@
 # VGA renderer behavior baseline
 
+This document describes the reviewed baseline. This experiment removes its
+payout sheet and changes the implementation; see [the experiment report](vga-area-experiment.md).
+
 The renderer consumes poker-core state and produces external RGB/sync signals;
 it does not control gameplay. All graphics and glyphs are synthesized on chip,
 with no framebuffer or external image memory. This baseline preserves the

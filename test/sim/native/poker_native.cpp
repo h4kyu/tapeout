@@ -13,7 +13,12 @@ struct Simulation {
     uint64_t cycles = 0, presses = 0;
     bool decode;
     explicit Simulation(bool decode_) : decode(decode_) {
-        model.clk = 0; model.rst_n = 0; model.ena = 1; model.ui_in = 0; model.uio_in = 42;
+        model.clk = 0; model.rst_n = 1; model.ena = 1; model.ui_in = 0; model.uio_in = 42;
+        // Gated clocks may never rise while reset is low. Assert a real
+        // asynchronous-reset edge at time zero, before any observed cycles.
+        model.eval();
+        model.rst_n = 0;
+        model.eval();
     }
     ~Simulation() { model.final(); }
 };

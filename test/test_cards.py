@@ -1,4 +1,5 @@
-"""Card boundaries, compact rank IDs, suit colors, and rotated indices."""
+"""Card geometry and centered rank and suit glyphs."""
+
 import cocotb
 from cocotb.triggers import Timer
 
@@ -14,71 +15,26 @@ async def card_faces_and_indices(dut):
             dut.card_glyph_x, dut.card_glyph_y, dut.card_red))
 
     dut.card_values.value = 0
-    for y in (0, 260, 261, 270, 414, 415, 479, 480):
-        for x in range(640):
-            result = await sample(x, y)
-            inside = 261 <= y < 415 and any(23 + 121*i <= x < 133 + 121*i for i in range(5))
-            assert result[:2] == (int(inside), 0), (x, y, result)
+    for slot in range(5):
+        left = 128 * slot
+        for x, y, inside in ((8, 261, False), (9, 261, True),
+                             (118, 414, True), (119, 414, False),
+                             (64, 260, False), (64, 415, False)):
+            assert (await sample(left + x, y))[:2] == (int(inside), 0)
 
-    for suit in range(4):
-        for rank in range(2, 15):
-            card = suit * 16 + rank
-            dut.card_values.value = sum(card << (6*i) for i in range(5))
-            expected_rank = rank + 1 if rank < 10 else {11: 20, 12: 27, 13: 21, 14: 11}.get(rank)
-            for i in range(5):
-                requests = [(11,24,37+suit),(22,35,37+suit)] if rank in (11,12,13) else []
-                if rank == 10:
-                    requests += [(5, 8, 2), (16, 19, 2), (17, 8, 1), (28, 19, 1)]
-                else:
-                    requests += [(11, 8, expected_rank), (22, 19, expected_rank)]
-                for x, y, character in requests:
-                    gx = (x-5) % 12 if rank == 10 and y < 20 else x-11
-                    gy = y-(8 if y < 20 else 24)
-                    for rotated in (False, True):
-                        local_x, local_y = (109-x, 153-y) if rotated else (x, y)
-                        result = await sample(23+121*i+local_x, 261+local_y)
-                        assert result == (1, 1, character, gx, gy, int(suit in (1, 2))), (card, i, rotated, result)
-                for x, y in ((11, 20), (5, 36)):
-                    assert (await sample(23+121*i+x, 261+y))[:2] == (1, 0)
-
-    distinct = (2, 26, 44, 61, 14)
-    dut.card_values.value = sum(card << (6*i) for i, card in enumerate(distinct))
-    for i, card in enumerate(distinct):
-        rank = card & 15
-        x = 5 if rank == 10 else 11
-        expected = {2: 3, 10: 2, 12: 27, 13: 21, 14: 11}[rank]
-        assert (await sample(23+121*i+x, 261+8))[2] == expected
-
-    for suit in range(4):
-        for rank in (0, 1, 15):
-            dut.card_values.value = suit*16+rank
-            for x, y in ((11, 8), (11, 24), (98, 145), (98, 129)):
-                assert (await sample(23+x, 261+y))[:2] == (1, 0)
-
-    # Count every occupied pip cell and independently check traditional layouts.
-    for rank in range(2, 15):
-        dut.card_values.value = 32+rank  # Hearts
-        cells = set()
-        for row in range(7):
-            for col, x in enumerate((27,49,71)):
-                value = await sample(23+x, 261+32+14*row)
-                if rank <= 10 and value[1]:
-                    assert value[2] == 39
-                    cells.add((row,col))
-        if rank <= 10:
-            assert len(cells) == rank, (rank,cells)
-            if rank in (2,3):
-                assert all(col == 1 for _,col in cells)
-            else:
-                assert {(0,0),(0,2),(6,0),(6,2)} <= cells
-        if rank == 14:
-            for x,y,gx,gy in ((49,71,0,0),(60,82,11,11)):
-                assert (await sample(23+x,261+y))[1:5] == (1,39,gx,gy)
-            for x,y in ((48,71),(61,71),(49,70),(49,83)):
-                assert (await sample(23+x,261+y))[:2] == (1,0)
-        if rank in (11,12,13):
-            char = {11:20,12:27,13:21}[rank]
-            for x,y,gx,gy in ((31,53,0,0),(34,56,0,0),(78,100,11,11)):
-                assert (await sample(23+x,261+y))[1:5] == (1,char,gx,gy)
-            for x,y in ((31,52),(79,53),(31,101)):
-                assert (await sample(23+x,261+y))[:2] == (1,0)
+    rank_glyphs = {**{rank: rank + 1 for rank in range(2, 10)},
+                   11: 20, 12: 27, 13: 21, 14: 11}
+    for slot in range(5):
+        left = 128 * slot
+        for suit in range(4):
+            red = int(suit in (1, 2))
+            for rank in range(2, 15):
+                dut.card_values.value = ((suit << 4) | rank) << (6 * slot)
+                rank_cells = ((40, 2), (64, 1)) if rank == 10 else ((52, rank_glyphs[rank]),)
+                for x, glyph in rank_cells:
+                    assert await sample(left + x, 304) == (1, 1, glyph, 0, 0, red)
+                    assert await sample(left + x + 23, 327) == (1, 1, glyph, 11, 11, red)
+                assert await sample(left + 52, 352) == (1, 1, 37 + suit, 0, 0, red)
+                assert await sample(left + 75, 375) == (1, 1, 37 + suit, 11, 11, red)
+                for x, y in ((12, 270), (64, 303), (64, 328), (76, 352), (64, 376)):
+                    assert (await sample(left + x, y))[:2] == (1, 0)

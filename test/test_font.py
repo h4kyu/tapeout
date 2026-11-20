@@ -1,5 +1,6 @@
 """Character IDs, row orientation, and blank fallbacks for the on-chip font."""
 
+import hashlib
 import cocotb
 from cocotb.triggers import Timer
 
@@ -7,6 +8,7 @@ from cocotb.triggers import Timer
 @cocotb.test()
 async def font_character_mapping(dut):
     glyphs = {}
+    encoded = bytearray()
     for character in range(64):
         rows = []
         dut.font_character.value = character
@@ -16,6 +18,7 @@ async def font_character_mapping(dut):
             pixels = dut.font_pixels.value
             assert pixels.is_resolvable
             value = int(pixels)
+            encoded.extend(value.to_bytes(2,"big"))
             if character == 0 or character >= 41 or row >= 12:
                 assert value == 0, (character, row, value)
             rows.append(value)
@@ -42,3 +45,5 @@ async def font_character_mapping(dut):
     assert glyphs[38][10:] == (0, 0)
     assert glyphs[39][10:] == (0, 0)
     assert glyphs[40][11] == 0b000111111000 # Spade stem base
+
+    assert hashlib.sha256(encoded).hexdigest() == "97f6b1707dab8af22e0606f581cf73d629d6c48d814938cb679960175b249efb"

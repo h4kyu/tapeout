@@ -60,6 +60,11 @@ capture-vga:
 	VGA_HEADLESS=1 $(MAKE) play-vga
 
 test-sim:
+	@mkdir -p sim_build
+	iverilog -g2012 -s tb_credits_exhaustive -o sim_build/bcd-exhaustive $(SRC_DIR)/credits_bet.v $(SRC_DIR)/poker_dealer.v tb_credits_exhaustive.v
+	vvp sim_build/bcd-exhaustive
+	iverilog -g2012 -s tb_wallet -o sim_build/wallet $(SRC_DIR)/poker_core.v $(SRC_DIR)/poker_dealer.v tb_wallet.v
+	vvp sim_build/wallet
 	python3 -m pytest -q sim/tests/test_vga_tools.py sim/tests/test_native.py
 	$(MAKE) sim COCOTB_TEST_MODULES=sim.tests.test_native_equivalence,sim.tests.test_terminal COCOTB_TEST_FILTER= COCOTB_TESTCASE= COCOTB_PLUSARGS="$(COCOTB_PLUSARGS) +NO_WAVES"
 	@! grep '<failure' results.xml

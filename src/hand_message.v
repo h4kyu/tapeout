@@ -41,85 +41,15 @@ module hand_message (
         endcase
     end
 
-    // The six centered origins are constants; avoid recomputing the origin
-    // from the character count in every character-position comparison.
-    reg [8:0] centered_left;
+    // Center names on 16-pixel slots. Odd lengths start halfway across a slot.
+    wire [8:0] rel_x = x[8:0] - (9'd320 - {2'b0,character_count,3'b0});
+    wire in_name = x < 512 && rel_x[8:4] < character_count;
     always @* begin
-        case (category)
-            4'd1, 4'd3: centered_left = 9'd170;
-            4'd7, 4'd8: centered_left = 9'd180;
-            4'd9: centered_left = 9'd210;
-            4'd6: centered_left = 9'd220;
-            4'd2, 4'd4: centered_left = 9'd240;
-            4'd5: centered_left = 9'd270;
-            default: centered_left = 9'd320;
-        endcase
+        text_active=complete_hand && qualifying_hand && y>=216 && y<228 && in_name && rel_x[3:0]<12;
+        text_column=rel_x[7:4];
     end
-
-    function [3:0] font_coordinate;
-        input [4:0] pixel;
-        begin
-            case (pixel)
-                5'd0, 5'd1: font_coordinate = 4'd0;
-                5'd2, 5'd3: font_coordinate = 4'd1;
-                5'd4: font_coordinate = 4'd2;
-                5'd5, 5'd6: font_coordinate = 4'd3;
-                5'd7, 5'd8: font_coordinate = 4'd4;
-                5'd9: font_coordinate = 4'd5;
-                5'd10, 5'd11: font_coordinate = 4'd6;
-                5'd12, 5'd13: font_coordinate = 4'd7;
-                5'd14: font_coordinate = 4'd8;
-                5'd15, 5'd16: font_coordinate = 4'd9;
-                5'd17, 5'd18: font_coordinate = 4'd10;
-                5'd19: font_coordinate = 4'd11;
-                default: font_coordinate = 4'd0;
-            endcase
-        end
-    endfunction
-
-    // Normalize once to the message's local coordinate. All 15 character
-    // slots share this range check, cell decoder, and glyph-offset subtractor.
-    reg [8:0] left;
-    reg [3:0] column;
-    reg [4:0] x_offset;
-    reg [4:0] y_offset;
-    reg [8:0] local_x;
-    reg [8:0] cell_left;
-    always @* begin
-        text_active = 1'b0;
-        text_column = 4'd0;
-        left = centered_left;
-        column = 0;
-        x_offset = 0;
-        y_offset = 0;
-        local_x = 0;
-        cell_left = 0;
-        if (complete_hand && qualifying_hand && y >= 213 && y < 233 &&
-            x >= left && x < {1'b0,left} + character_count * 10'd20) begin
-            text_active = 1'b1;
-            local_x = x - left;
-            if (local_x >= 280) begin column = 14; cell_left = 280; end
-            else if (local_x >= 260) begin column = 13; cell_left = 260; end
-            else if (local_x >= 240) begin column = 12; cell_left = 240; end
-            else if (local_x >= 220) begin column = 11; cell_left = 220; end
-            else if (local_x >= 200) begin column = 10; cell_left = 200; end
-            else if (local_x >= 180) begin column = 9; cell_left = 180; end
-            else if (local_x >= 160) begin column = 8; cell_left = 160; end
-            else if (local_x >= 140) begin column = 7; cell_left = 140; end
-            else if (local_x >= 120) begin column = 6; cell_left = 120; end
-            else if (local_x >= 100) begin column = 5; cell_left = 100; end
-            else if (local_x >= 80) begin column = 4; cell_left = 80; end
-            else if (local_x >= 60) begin column = 3; cell_left = 60; end
-            else if (local_x >= 40) begin column = 2; cell_left = 40; end
-            else if (local_x >= 20) begin column = 1; cell_left = 20; end
-            text_column = column[3:0];
-            x_offset = local_x - cell_left;
-            y_offset = y - 213;
-        end
-    end
-
-    assign pixel_x=x_offset;
-    assign pixel_y=y_offset;
-    assign glyph_x = font_coordinate(x_offset[4:0]);
-    assign glyph_y = font_coordinate(y_offset[4:0]);
+    assign pixel_x={1'b0,rel_x[3:0]};
+    assign pixel_y={1'b0,y[3:0]-4'd8};
+    assign glyph_x=pixel_x[3:0];
+    assign glyph_y=pixel_y[3:0];
 endmodule

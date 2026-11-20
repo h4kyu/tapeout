@@ -2,13 +2,11 @@
 
 The proposed Video Poker design is a five-card draw poker game with a VGA display. The display shows the dealt cards, which cards are held, the player's credit balance, and the result of each round. A 25 MHz input clock drives the game logic and VGA controller.
 
-Current RTL generates 640×480 VGA with a payout sheet, five card faces,
-persistent HOLD labels, hand names, and a yellow credits/BET/result footer.
-Reset leaves the card rectangles blank. The final result displays WIN followed
-by a four-digit payout, or GAME OVER, without covering the cards.
-This is a functional simulation baseline: the complete renderer currently
-exceeds the 1×1 tile's usable area. See [renderer behavior and area](vga-renderer.md)
-for measured usage and visual baselines; physical fit and timing remain open.
+This experimental branch generates the same 640×480 game display except that
+the payout sheet is removed. Its custom synthesis estimate is below 100% of
+the usable 1×1 core, with very little margin. It is not physical-fit or timing
+signoff; see [the area experiment](vga-area-experiment.md) for the exact recipe,
+behavioral checks, and ASIC-specific storage changes.
 
 The player starts with 100 credits. Pressing the Deal/Draw button starts a round, deducts a fixed wager of 5 credits, and deals five cards. Five active-high switches select the cards to hold. Pressing the button again keeps the selected cards and replaces the others. The final hand is evaluated, and its payout is added to the remaining balance.
 

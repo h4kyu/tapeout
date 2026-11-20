@@ -3,7 +3,7 @@
 // combinational five-card evaluator. Category increases with hand strength:
 // 0 loss, 1 jacks+, 2 two pair, 3 trips, 4 straight, 5 flush,
 // 6 full house, 7 quads, 8 straight flush, 9 royal flush
-module poker_evaluator (
+module poker_evaluator #(parameter DEALER_VALIDATED=0) (
     input wire [29:0] cards,
     output reg [3:0] category,
     output reg [11:0] payout
@@ -14,7 +14,7 @@ module poker_evaluator (
     reg [12:0] ranks;
     reg valid_hand, flush, straight;
     integer i, j, k;
-    reg [3:0] rank_pairs;
+    reg pair_found, trips_found, quads_found, two_pairs_found;
     reg high_pair;
 
     genvar a, b;
@@ -38,49 +38,88 @@ module poker_evaluator (
         valid_hand = 1'b1;
         flush = 1'b1;
         straight = 1'b0;
-        rank_pairs = 4'd0;
+        pair_found = 1'b0;
+        trips_found = 1'b0;
+        quads_found = 1'b0;
+        two_pairs_found = 1'b0;
         high_pair = 1'b0;
+        for (k=0; k<13; k=k+1)
+            ranks[k] = (rank[0] == k+2) || (rank[1] == k+2) ||
+                       (rank[2] == k+2) || (rank[3] == k+2) || (rank[4] == k+2);
         for (i = 0; i < 5; i = i + 1) begin
-            if (rank[i] < 2 || rank[i] > 14) valid_hand = 1'b0;
-            else ranks[rank[i] - 2] = 1'b1;
+            if (!DEALER_VALIDATED && (rank[i] < 2 || rank[i] > 14)) valid_hand = 1'b0;
+
             if (suit[i] != cards[5:4]) flush = 1'b0;
         end
         for (i = 0; i < 5; i = i + 1) begin
             for (j = i + 1; j < 5; j = j + 1) begin
                 if (rank_equal[i][j]) begin
-                    rank_pairs = rank_pairs + 4'd1;
+                    pair_found = 1'b1;
                     if (rank[i] >= 11) high_pair = 1'b1;
-                    if (suit[i] == suit[j]) valid_hand = 1'b0;
+                    if (!DEALER_VALIDATED && suit[i] == suit[j]) valid_hand = 1'b0;
                 end
             end
         end
-        // Matching-pair totals: pair=1, two pair=2, trips=3,
-        // full house=4 (3+1), quads=6. Five equal ranks cannot be valid.
-        for (k = 0; k < 9; k = k + 1)
-            if (ranks == (13'b11111 << k)) straight = 1'b1;
-        // A,2,3,4,5: ace is low only for this straight.
-        if (ranks == 13'b1000000001111) straight = 1'b1;
-
+        trips_found = trips_found | (rank_equal[0][1] & rank_equal[0][2]);
+        trips_found = trips_found | (rank_equal[0][1] & rank_equal[0][3]);
+        trips_found = trips_found | (rank_equal[0][1] & rank_equal[0][4]);
+        trips_found = trips_found | (rank_equal[0][2] & rank_equal[0][3]);
+        trips_found = trips_found | (rank_equal[0][2] & rank_equal[0][4]);
+        trips_found = trips_found | (rank_equal[0][3] & rank_equal[0][4]);
+        trips_found = trips_found | (rank_equal[1][2] & rank_equal[1][3]);
+        trips_found = trips_found | (rank_equal[1][2] & rank_equal[1][4]);
+        trips_found = trips_found | (rank_equal[1][3] & rank_equal[1][4]);
+        trips_found = trips_found | (rank_equal[2][3] & rank_equal[2][4]);
+        quads_found = quads_found | (rank_equal[0][1] & rank_equal[0][2] & rank_equal[0][3]);
+        two_pairs_found = two_pairs_found | (rank_equal[0][1] & rank_equal[2][3]);
+        two_pairs_found = two_pairs_found | (rank_equal[0][2] & rank_equal[1][3]);
+        two_pairs_found = two_pairs_found | (rank_equal[0][3] & rank_equal[1][2]);
+        quads_found = quads_found | (rank_equal[0][1] & rank_equal[0][2] & rank_equal[0][4]);
+        two_pairs_found = two_pairs_found | (rank_equal[0][1] & rank_equal[2][4]);
+        two_pairs_found = two_pairs_found | (rank_equal[0][2] & rank_equal[1][4]);
+        two_pairs_found = two_pairs_found | (rank_equal[0][4] & rank_equal[1][2]);
+        quads_found = quads_found | (rank_equal[0][1] & rank_equal[0][3] & rank_equal[0][4]);
+        two_pairs_found = two_pairs_found | (rank_equal[0][1] & rank_equal[3][4]);
+        two_pairs_found = two_pairs_found | (rank_equal[0][3] & rank_equal[1][4]);
+        two_pairs_found = two_pairs_found | (rank_equal[0][4] & rank_equal[1][3]);
+        quads_found = quads_found | (rank_equal[0][2] & rank_equal[0][3] & rank_equal[0][4]);
+        two_pairs_found = two_pairs_found | (rank_equal[0][2] & rank_equal[3][4]);
+        two_pairs_found = two_pairs_found | (rank_equal[0][3] & rank_equal[2][4]);
+        two_pairs_found = two_pairs_found | (rank_equal[0][4] & rank_equal[2][3]);
+        quads_found = quads_found | (rank_equal[1][2] & rank_equal[1][3] & rank_equal[1][4]);
+        two_pairs_found = two_pairs_found | (rank_equal[1][2] & rank_equal[3][4]);
+        two_pairs_found = two_pairs_found | (rank_equal[1][3] & rank_equal[2][4]);
+        two_pairs_found = two_pairs_found | (rank_equal[1][4] & rank_equal[2][3]);
+        straight = !pair_found && (((rank[0] >= 2 && rank[0] <= 6) && (rank[1] >= 2 && rank[1] <= 6) && (rank[2] >= 2 && rank[2] <= 6) && (rank[3] >= 2 && rank[3] <= 6) && (rank[4] >= 2 && rank[4] <= 6)) ||
+            ((rank[0] >= 3 && rank[0] <= 7) && (rank[1] >= 3 && rank[1] <= 7) && (rank[2] >= 3 && rank[2] <= 7) && (rank[3] >= 3 && rank[3] <= 7) && (rank[4] >= 3 && rank[4] <= 7)) ||
+            ((rank[0] >= 4 && rank[0] <= 8) && (rank[1] >= 4 && rank[1] <= 8) && (rank[2] >= 4 && rank[2] <= 8) && (rank[3] >= 4 && rank[3] <= 8) && (rank[4] >= 4 && rank[4] <= 8)) ||
+            ((rank[0] >= 5 && rank[0] <= 9) && (rank[1] >= 5 && rank[1] <= 9) && (rank[2] >= 5 && rank[2] <= 9) && (rank[3] >= 5 && rank[3] <= 9) && (rank[4] >= 5 && rank[4] <= 9)) ||
+            ((rank[0] >= 6 && rank[0] <= 10) && (rank[1] >= 6 && rank[1] <= 10) && (rank[2] >= 6 && rank[2] <= 10) && (rank[3] >= 6 && rank[3] <= 10) && (rank[4] >= 6 && rank[4] <= 10)) ||
+            ((rank[0] >= 7 && rank[0] <= 11) && (rank[1] >= 7 && rank[1] <= 11) && (rank[2] >= 7 && rank[2] <= 11) && (rank[3] >= 7 && rank[3] <= 11) && (rank[4] >= 7 && rank[4] <= 11)) ||
+            ((rank[0] >= 8 && rank[0] <= 12) && (rank[1] >= 8 && rank[1] <= 12) && (rank[2] >= 8 && rank[2] <= 12) && (rank[3] >= 8 && rank[3] <= 12) && (rank[4] >= 8 && rank[4] <= 12)) ||
+            ((rank[0] >= 9 && rank[0] <= 13) && (rank[1] >= 9 && rank[1] <= 13) && (rank[2] >= 9 && rank[2] <= 13) && (rank[3] >= 9 && rank[3] <= 13) && (rank[4] >= 9 && rank[4] <= 13)) ||
+            ((rank[0] >= 10 && rank[0] <= 14) && (rank[1] >= 10 && rank[1] <= 14) && (rank[2] >= 10 && rank[2] <= 14) && (rank[3] >= 10 && rank[3] <= 14) && (rank[4] >= 10 && rank[4] <= 14)) ||
+            ((rank[0] <= 5 || rank[0] == 14) && (rank[1] <= 5 || rank[1] == 14) && (rank[2] <= 5 || rank[2] == 14) && (rank[3] <= 5 || rank[3] == 14) && (rank[4] <= 5 || rank[4] == 14)));
         category = 4'd0;
         payout = 12'd0;
         if (valid_hand) begin
-            if (flush && ranks == 13'b1111100000000) begin
+            if (flush && straight && rank[0] >= 10 && rank[1] >= 10 && rank[2] >= 10 && rank[3] >= 10 && rank[4] >= 10) begin
                 category = 4'd9; payout = 12'd4000;
             end else if (flush && straight) begin
                 category = 4'd8; payout = 12'd250;
-            end else if (rank_pairs == 4'd6) begin
+            end else if (quads_found) begin
                 category = 4'd7; payout = 12'd125;
-            end else if (rank_pairs == 4'd4) begin
+            end else if (trips_found && two_pairs_found) begin
                 category = 4'd6; payout = 12'd45;
             end else if (flush) begin
                 category = 4'd5; payout = 12'd30;
             end else if (straight) begin
                 category = 4'd4; payout = 12'd20;
-            end else if (rank_pairs == 4'd3) begin
+            end else if (trips_found) begin
                 category = 4'd3; payout = 12'd15;
-            end else if (rank_pairs == 4'd2) begin
+            end else if (two_pairs_found) begin
                 category = 4'd2; payout = 12'd10;
-            end else if (rank_pairs == 4'd1 && high_pair) begin
+            end else if (pair_found && high_pair) begin
                 category = 4'd1; payout = 12'd5;
             end
         end

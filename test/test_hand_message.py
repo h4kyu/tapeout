@@ -27,31 +27,31 @@ async def hand_message_requests(dut):
             # stale result before drawing, or ignoring the latch after drawing.
             dut.message_live_category.value = category if state != 5 else 0
             dut.message_result_category.value = category if state == 5 else 0
-            left = 320 - len(name) * 10
+            left = 320 - len(name) * 8
             for column, character in enumerate(name):
-                assert await pixel(left + column * 20, 220) == (
+                assert await pixel(left + column * 16, 220) == (
                     1, characters.index(character), 0, 4)
                 assert int(dut.message_yellow.value) == (state != 2)
-            for x, y in ((left - 1, 213), (left + len(name) * 20, 213),
-                         (left, 212), (left, 233)):
+            for x, y in ((left - 1, 216), (left + len(name) * 16, 216),
+                         (left, 215), (left, 228)):
                 assert (await pixel(x, y))[0] == 0
 
-    # Check both axes of 20px -> 12px scaling over a complete character cell.
+    # Check the native 12px glyph and the four-pixel gap.
     dut.message_state.value = 2
     dut.message_live_category.value = 1
-    for y in range(20):
-        for x in range(20):
-            assert await pixel(170 + x, 213 + y) == (1, characters.index('J'),
-                                                   x * 12 // 20, y * 12 // 20)
+    for y in range(12):
+        for x in range(12):
+            assert await pixel(200 + x, 216 + y) == (1, characters.index('J'),
+                                                   x, y)
 
     for state in (0, 1, 3, 6, 7):
         dut.message_state.value = state
         dut.message_live_category.value = 9
         dut.message_result_category.value = 9
-        assert (await pixel(210, 213))[0] == 0
+        assert (await pixel(272, 217))[0] == 0
     for state in (2, 4, 5):
         dut.message_state.value = state
         for category in (0, 10, 11, 12, 13, 14, 15):
             dut.message_live_category.value = category
             dut.message_result_category.value = category
-            assert (await pixel(320, 213))[0] == 0
+            assert (await pixel(320, 217))[0] == 0

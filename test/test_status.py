@@ -41,10 +41,10 @@ async def credits_bet_readout(dut):
         assert int(dut.status_unit.displayed_digits.value) == int(f"{balance:05d}", 16)
         digits = f"{balance:05d}"
         for column in range(5):
-            assert await pixel(555 + 12 * column, 446) == (1, int(digits[column]) + 1, 0, 0)
-        label_left = 459
+            assert await pixel(544 + 16 * column, 448) == (1, int(digits[column]) + 1, 0, 0)
+        label_left = 416
         for column, character in enumerate((13, 28, 15, 14, 19, 30, 29)):
-            assert (await pixel(label_left + 12 * column, 446))[:2] == (1, character)
+            assert (await pixel(label_left + 16 * column, 448))[:2] == (1, character)
 
     # Conversion must never expose partially shifted BCD, even if balance
     # changes while a previous conversion is still running.
@@ -59,13 +59,9 @@ async def credits_bet_readout(dut):
         assert int(dut.status_unit.displayed_digits.value) in (0x00100, 0x01000, 0x65535)
     assert int(dut.status_unit.displayed_digits.value) == 0x65535
 
-    # BET 5 is fixed and does not depend on current credits.
-    for column, character in enumerate((12, 15, 30, 0, 6)):
-        assert (await pixel(25 + 12 * column, 446))[:2] == (1, character)
-    for gy in range(12):
-        for gx in range(12):
-            assert await pixel(25 + gx, 446 + gy) == (1, 12, gx, gy)
-    for x, y in ((24, 446), (85, 446), (25, 445), (25, 458), (615, 446)):
+    # The proof-of-concept footer has no separate wager label.
+    for x, y in ((16, 448), (25, 452), (80, 459), (415, 448),
+                 (416, 447), (416, 460), (620, 448)):
         assert (await pixel(x, y))[0] == 0
 
     dut.status_balance.value = 7

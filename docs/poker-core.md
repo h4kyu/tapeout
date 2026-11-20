@@ -3,7 +3,7 @@
 see `proposal/SystemDiagram.excalidraw` for system diagram.
 
 implements the following modules:
-- `poker_dealer.v`: five fixed hand-slot writes, a ten-card used list, initial deal, and selective replacement.
+- `poker_dealer.v`: five hand-slot banks, an original-hand snapshot, initial deal, and selective replacement.
 - `poker_evaluator.v`: combinational hand classification with shared rank comparisons and a fixed-wager pay table.
 - `poker_core.v`: round control, wager deduction, result latching, and balance.
 
@@ -13,10 +13,13 @@ Each card is `{suit[1:0], rank[3:0]}`, with ranks 2 through 14 (ace). Rank codes
 Suit codes 0 through 3 are distinct suits.
 
 `cards[5:0]` is card 1, through `cards[29:24]` card 5.
-`hold_mask[0]` controls card 1. Up to ten six-bit entries retain every accepted
-card, including discards. Reset and a new round clear the occupied count;
-unoccupied entries are ignored and need no reset. Candidate acceptance rejects
-invalid ranks and occupied entries, and requires room in the list.
+`hold_mask[0]` controls card 1. This experiment represents the round's used
+cards as the union of its original hand and current hand. During initial dealing,
+the current hand alone contains all accepted cards. A start-draw snapshot keeps
+discarded cards in the set while replacements enter the current hand. The core
+permits one initial deal and at most one draw per round; a new deal invalidates
+the snapshot and clears current cards. Invalid ranks and duplicate candidates
+remain rejected, with unchanged transfer timing.
 `dealt_mask` is a combinational inspection view with row-major index
 `13 * suit + rank - 2`, not a second stored history. It is unused by the wrapper.
 
@@ -52,7 +55,10 @@ Pulses while busy are ignored, not queued. The final input adapter must produce 
 The dealer samples `start`, `draw_mode` and the hold mask together when idle.
 The evaluator is combinational, so the controller's EVALUATE state supplies a full cycle for it to settle.
 `hand_category` exposes this same evaluator for the live VGA message; it does not
-instantiate another evaluator. `result_category` still latches the final award.
+instantiate another evaluator. The standalone evaluator validates arbitrary
+card codes; the core instance uses the dealer's valid/unique-hand guarantee.
+Partial initial hands still report zero until the final card is present.
+`result_category` still latches the final award.
 
 ## Round and accounting rules
 
@@ -98,7 +104,7 @@ to 500,000 (20 ms at 25 MHz); RTL integration tests override it to five.
 
 `project.v` connects the game-state wires to the active `vga` renderer and maps
 its RGB/sync outputs to the documented VGA pins. The current renderer generates
-640×480 video with card faces, the payout sheet, HOLD labels, hand names, and a
+640×480 video with card faces, HOLD labels, hand names, and a
 native-size credits/BET/result footer. The core's existing evaluator supplies
 the live category; no extra evaluator is instantiated. Game-state signals remain
 available as named wrapper wires for RTL simulation.
@@ -114,3 +120,12 @@ and retained-output-shell routing/timing measurements, including remaining
 slow-corner setup violations. Those results do not establish fit or timing for
 the complete active renderer. The gate-level job checks defined wrapper outputs
 across reset; standalone gameplay tests still use RTL in that job.
+
+## Experimental storage and synthesis
+
+This branch uses GF180 integrated clock gates and a stable-input latch bank.
+Logical transfers, asynchronous reset values, state codes, and 16-bit accounting
+are unchanged. The converter's production units-digit storage relies on the
+invariant that reset, wagers, awards, and saturation produce multiples of five.
+See [the area experiment](vga-area-experiment.md) for the exact implementation,
+reference checks, measurement recipe, and remaining physical/timing work.

@@ -25,44 +25,11 @@ module hold_labels (
         end
     endfunction
 
-    reg [9:0] label_left;
-    reg selected;
-    reg [5:0] local_x;
-    reg [5:0] cell_left;
-    reg [1:0] column;
-    reg [3:0] x_offset;
-    reg [3:0] y_offset;
-    integer card_index;
     always @* begin
-        text_active = 1'b0;
-        character = 6'd0;
-        label_left = 10'd0;
-        selected = 1'b0;
-        local_x = 6'd0;
-        cell_left = 6'd0;
-        column = 2'd0;
-        x_offset = 4'd0;
-        y_offset = 4'd0;
-        for (card_index=0; card_index<5; card_index=card_index+1) begin
-            if (x >= 51+121*card_index && x < 105+121*card_index) begin
-                label_left = 51+121*card_index;
-                selected = held_cards[card_index];
-            end
-        end
-        if (selected && y >= 246 && y < 258) begin
-            local_x = x-label_left;
-            if (local_x >= 42) begin column=2'd3; cell_left=6'd42; end
-            else if (local_x >= 28) begin column=2'd2; cell_left=6'd28; end
-            else if (local_x >= 14) begin column=2'd1; cell_left=6'd14; end
-            if (local_x-cell_left < 6'd12) begin
-                text_active=1'b1;
-                character=hold_character(column);
-                x_offset=local_x-cell_left;
-                y_offset=y-246;
-            end
-        end
+        text_active = y>=246 && y<258 && x<640 && x[6:0]>=32 && x[6:0]<96
+                    && x[3:0]<12 && held_cards[x[9:7]];
+        character=hold_character(x[5:4]-2'd2);
     end
-
-    assign glyph_x = x_offset[3:0];
-    assign glyph_y = y_offset[3:0];
+    assign glyph_x=x[3:0];
+    assign glyph_y=y-246;
 endmodule
